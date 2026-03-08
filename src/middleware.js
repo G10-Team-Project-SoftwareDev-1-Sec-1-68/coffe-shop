@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-
-const PROTECTED_PATHS = ["/menu", "/order"];
+import { PROTECTED_PATHS } from "@/lib/constants";
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;
