@@ -4,6 +4,57 @@ A Next.js 15 (App Router) coffee shop project with menu and order management, au
 
 ---
 
+## สรุปโปรเจกต์ (สำหรับเพื่อน)
+
+โปรเจกต์นี้คือ **เว็บร้านกาแฟ KAFUNG** ทำด้วย Next.js 15 มีหน้าหลัก เข้าสู่ระบบ เมนู และสั่งออเดอร์
+
+**รันโปรเจกต์ (ในโฟลเดอร์ `my-app`):**
+```bash
+pnpm install
+cp .env.example .env.local
+pnpm dev
+```
+แล้วเปิดเบราว์เซอร์ที่ [http://localhost:3000](http://localhost:3000)
+
+**สิ่งที่โปรเจกต์มี:**
+- หน้าเว็บ: หน้าแรก, ล็อกอิน, เมนู, สั่งออเดอร์ (เมนูกับออเดอร์ต้องล็อกอินก่อน)
+- API: สร้าง/ดู/แก้/ลบ เมนูและออเดอร์ ผ่าน `/api/menu` และ `/api/orders`
+- Logic ด้านธุรกิจ: คำนวณราคา (ฐาน+ตัวเลือก+ส่วนลดสมาชิก+โปรโมชัน+VAT 7%), คิวออเดอร์ตอนออฟไลน์, ตัดสต็อกตามสูตร (BOM), เลือกเวลารับสินค้า, ระบบแต้มและระดับสมาชิก
+- Unit Test: ใช้ Vitest รันเทสทั้งหมดด้วย `pnpm test:run`
+
+**คำสั่งที่ใช้บ่อย:**
+| ต้องการ | คำสั่ง |
+|--------|--------|
+| รันเว็บ | `pnpm dev` |
+| ตรวจโค้ด (lint) | `pnpm lint` |
+| รันเทส | `pnpm test:run` |
+| Build ขึ้น production | `pnpm build` แล้ว `pnpm start` |
+
+คำสั่ง CLI แบบละเอียด (Next, Lint, Prisma, Vitest, shadcn) อยู่ที่ [CLI Reference](#cli-reference) ด้านล่าง
+
+---
+
+## สารบัญ (Table of Contents)
+
+| หัวข้อ | ลิงก์ |
+|--------|--------|
+| **สรุปภาษาไทย (สำหรับเพื่อน)** | **[สรุปโปรเจกต์](#สรุปโปรเจกต์-สำหรับเพื่อน)** |
+| สรุปโปรเจกต์ (EN) | [Summary](#summary) |
+| วิธีเริ่มต้น | [Quick Start](#quick-start) |
+| คำสั่งใน package.json | [Scripts](#scripts) |
+| **คำสั่ง CLI แบบละเอียด (Next, Lint, Prisma, Vitest, shadcn)** | **[CLI Reference](#cli-reference)** |
+| แต่ละไฟล์ทำอะไร | [What each file does](#what-each-file-does-added-for-features--tests) |
+| โครงสร้างโปรเจกต์ | [Project Structure](#project-structure) |
+| หน้าเว็บ | [Pages](#pages) |
+| API | [API Reference](#api-reference-crud) |
+| Unit Tests | [Unit Tests (Vitest)](#unit-tests-vitest) |
+| ตัวแปรแวดล้อม | [Environment Variables](#environment-variables) |
+| Prisma | [Adding Persistence](#adding-persistence-prisma) |
+| Path Alias | [Path Alias](#path-alias) |
+| Tech Stack | [Tech Stack](#tech-stack) |
+
+---
+
 ## Summary
 
 | Area | Description |
@@ -41,13 +92,183 @@ Open [http://localhost:3000](http://localhost:3000).
 | `pnpm dev`   | Start dev server (Turbopack)    |
 | `pnpm build` | Build for production            |
 | `pnpm start` | Run production build             |
-| `pnpm lint`  | Run ESLint                      |
-| `pnpm test`  | Run unit tests (watch)           |
-| `pnpm test:run` | Run unit tests once            |
-
-| `pnpm test:run` | Run unit tests once            |
-| `pnpm test:ui`  | Run tests with Vitest UI       |
+| `pnpm lint`  | Run ESLint (Next.js lint)       |
+| `pnpm test`  | Run unit tests (watch)          |
+| `pnpm test:run` | Run unit tests once          |
+| `pnpm test:ui`  | Run tests with Vitest UI     |
 | `pnpm test:coverage` | Run tests with coverage report |
+
+---
+
+<a id="cli-reference"></a>
+
+## CLI Reference (คำสั่งใช้งานแต่ละเครื่องมือ)
+
+เพื่อนที่ clone โปรเจกต์สามารถใช้คำสั่งด้านล่างได้เลย (รันในโฟลเดอร์ `my-app`)
+
+### 1. Next.js
+
+| คำสั่ง | ความหมาย | ตัวอย่าง |
+|--------|----------|----------|
+| รันผ่าน script | ใช้ตามที่กำหนดใน `package.json` | ดูหัวข้อ Scripts ด้านบน |
+| รันโดยตรง (npx) | ไม่ต้องพึ่ง script | เหมือนกัน ถ้าไม่มี script ให้ใช้แบบนี้ |
+
+```bash
+# Development (โหมดพัฒนา — รันแล้วเปิด http://localhost:3000)
+pnpm dev
+# หรือ
+npx next dev --turbopack
+
+# Build สำหรับ production
+pnpm build
+# หรือ
+npx next build --turbopack
+
+# รันหลัง build แล้ว (production mode)
+pnpm start
+# หรือ
+npx next start
+
+# ตรวจสอบว่า build ผ่านไหม (ไม่รันเซิร์ฟเวอร์)
+npx next build
+```
+
+**หมายเหตุ:** โปรเจกต์ใช้ `--turbopack` อยู่แล้ว ถ้าเพื่อนรัน `npx next dev` โดยไม่ใส่ flag จะได้ webpack แทน (ช้ากว่า)
+
+---
+
+### 2. ESLint (Next.js lint)
+
+ใช้ตรวจโค้ดให้ตรงมาตรฐานและ best practice ของ Next.js
+
+```bash
+# รัน lint ทั้งโปรเจกต์ (ตามที่ตั้งใน package.json)
+pnpm lint
+# หรือ
+npx next lint
+
+# lint เฉพาะโฟลเดอร์หรือไฟล์
+npx next lint --dir src/app
+npx next lint --file src/lib/pricing.js
+
+# แก้ไขอัตโนมัติได้ (ถ้ารองรับ)
+npx next lint --fix
+```
+
+** config:** ใช้ `eslint.config.mjs` และ `next/core-web-vitals` (ดูใน `eslint.config.mjs`)
+
+---
+
+### 3. Prisma
+
+ใช้เมื่อต่อฐานข้อมูล PostgreSQL และมีไฟล์ `prisma/schema.prisma` แล้ว
+
+```bash
+# สร้างโฟลเดอร์ prisma และไฟล์ schema.prisma (ครั้งแรกเท่านั้น)
+npx prisma init
+
+# สร้าง Prisma Client หลังแก้ schema (ต้องรันทุกครั้งที่แก้ schema)
+npx prisma generate
+
+# อัปเดต DB ตาม schema (ไม่ใช้ migration file)
+npx prisma db push
+
+# สร้าง migration และอัปเดต DB (ใช้เมื่ออยากเก็บ history การเปลี่ยน schema)
+npx prisma migrate dev --name init
+
+# เปิด Prisma Studio ดู/แก้ข้อมูลใน DB ผ่าน browser
+npx prisma studio
+
+# รัน migration ใน production
+npx prisma migrate deploy
+
+# รีเซ็ต DB (ลบข้อมูลแล้ว apply migration ใหม่) — ใช้ระวัง
+npx prisma migrate reset
+```
+
+**ต้องมี:** ตัวแปร `DATABASE_URL` ใน `.env` หรือ `.env.local` (ดูใน `.env.example`)
+
+---
+
+### 4. Vitest (Unit Test)
+
+ใช้รัน unit test ทั้งโปรเจกต์
+
+```bash
+# โหมด watch — รันเทสแล้วรันใหม่ทุกครั้งที่แก้ไฟล์ (เหมาะตอนเขียนโค้ด)
+pnpm test
+# หรือ
+npx vitest
+
+# รันเทสครั้งเดียวแล้วจบ (เหมาะกับ CI หรือเช็คก่อน commit)
+pnpm test:run
+# หรือ
+npx vitest run
+
+# รันเทสแล้วเปิด UI ใน browser
+pnpm test:ui
+# หรือ
+npx vitest --ui
+
+# รันเทสพร้อมรายงาน coverage
+pnpm test:coverage
+# หรือ
+npx vitest run --coverage
+```
+
+**รันเทสเฉพาะไฟล์หรือชื่อเทส:**
+
+```bash
+# รันเฉพาะไฟล์
+npx vitest run src/lib/pricing.test.js
+
+# รันเทสที่ชื่อตรงกับคำค้น (pattern)
+npx vitest run -t "Pricing Engine"
+
+# watch เฉพาะไฟล์
+npx vitest src/lib/pricing.test.js
+```
+
+** config:** `vitest.config.mjs` — ใช้ environment `jsdom`, รันไฟล์ `src/**/*.test.{js,jsx}`, path alias `@` → `src/`
+
+---
+
+### 5. shadcn/ui
+
+ใช้เพิ่มหรืออัปเดต UI component จาก shadcn (Button, Card, Input ฯลฯ)
+
+```bash
+# เริ่มใช้ shadcn ในโปรเจกต์ (ครั้งแรก — จะถาม style, base color, etc.)
+npx shadcn@latest init
+
+# เพิ่ม component (เลือกจาก list)
+npx shadcn@latest add button
+
+# เพิ่มหลายตัวในคำสั่งเดียว
+npx shadcn@latest add button card input
+
+# ดู component ที่มีให้เพิ่ม
+npx shadcn@latest add
+
+# อัปเดต component ที่มีอยู่แล้ว
+npx shadcn@latest add button --overwrite
+```
+
+**หมายเหตุ:** หลัง `add` โค้ดจะถูกเขียนลงในโปรเจกต์ (เช่น `src/components/ui/button.jsx`) เพื่อนสามารถแก้เองได้
+
+---
+
+### สรุปคำสั่งที่ใช้บ่อย
+
+| งานที่ทำ | คำสั่ง |
+|----------|--------|
+| รันเว็บพัฒนา | `pnpm dev` |
+| เช็คโค้ด (lint) | `pnpm lint` |
+| รันเทสครั้งเดียว | `pnpm test:run` |
+| รันเทสแบบ watch | `pnpm test` |
+| Build ขึ้น production | `pnpm build` แล้ว `pnpm start` |
+| ต่อ DB กับ Prisma | ใส่ `DATABASE_URL` ใน `.env` → `npx prisma generate` → `npx prisma db push` หรือ `migrate dev` |
+| เพิ่มปุ่ม/การ์ดจาก shadcn | `npx shadcn@latest add button card` |
 
 ---
 
