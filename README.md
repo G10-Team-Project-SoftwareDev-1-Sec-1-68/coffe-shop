@@ -34,11 +34,28 @@ pnpm dev
 
 ---
 
+## รองรับการขยายโปรเจกต์ไหม (เมื่อทำตาม SRS)
+
+**ตอบ: รองรับครับ** โครงสร้างตอนนี้ออกแบบให้เพิ่มหน้าต่าง ๆ เพิ่ม DB, config สี/ธีม และ component ได้ไม่ยาก ทำตาม SRS แล้วค่อย ๆ เพิ่มทีละส่วน แล้วค่อยอัปเดต README ตามได้
+
+| สิ่งที่ต้องเพิ่ม | ทำยังไง (สรุป) | อัปเดต README |
+|------------------|-----------------|----------------|
+| **หน้าใหม่** | สร้างโฟลเดอร์ใน `src/app/` เช่น `src/app/about/page.jsx` → ได้ route `/about` | เพิ่มใน [Pages](#pages) และถ้าเป็น route ที่ต้องล็อกอิน → เพิ่ม path ใน `src/lib/constants.js` (PROTECTED_PATHS) |
+| **API ใหม่** | สร้าง `src/app/api/<ชื่อ>/route.js` (GET/POST) และ `[id]/route.js` ถ้าต้อง CRUD | เพิ่มใน [API Reference](#api-reference-crud) |
+| **ฐานข้อมูล (DB)** | ใช้ Prisma: สร้าง/แก้ `prisma/schema.prisma` → `npx prisma generate` และ `db push` หรือ `migrate dev` | เพิ่มตัวแปรใน [Environment Variables](#environment-variables), อัปเดต [Adding Persistence](#adding-persistence-prisma) ถ้ามีขั้นตอนเพิ่ม |
+| **Config สี / ธีม** | แก้ `src/app/globals.css` (ตัวแปร CSS) หรือใช้ Tailwind theme ใน config; ถ้ามีไฟล์ config แยก ใส่ใน `src/lib/` | ถ้ามีตัวแปรหรือไฟล์ใหม่ → บอกใน README ส่วนที่เกี่ยวข้อง |
+| **Component (ปุ่ม, การ์ด ฯลฯ)** | ใช้ shadcn: `npx shadcn@latest add button` ฯลฯ โค้ดจะไปที่ `src/components/ui/` หรือใส่ component เองใน `src/app/components/` | ถ้าเป็น pattern ใหม่หรือโฟลเดอร์ใหม่ → อัปเดต [Project Structure](#project-structure) / [What each file does](#what-each-file-does-added-for-features--tests) |
+
+**ข้อแนะนำ:** ทำตาม SRS ทีละฟีเจอร์ → พอเพิ่มหน้า/API/DB/config/component แล้ว ค่อยมาเพิ่มบรรทัดใน README (ตารางหน้า, ตาราง API, โครงสร้าง, คำอธิบายไฟล์) จะได้ไม่หนักและ README ตรงกับโปรเจกต์เสมอ
+
+---
+
 ## สารบัญ (Table of Contents)
 
 | หัวข้อ | ลิงก์ |
 |--------|--------|
 | **สรุปภาษาไทย (สำหรับเพื่อน)** | **[สรุปโปรเจกต์](#สรุปโปรเจกต์-สำหรับเพื่อน)** |
+| **รองรับการขยาย (เพิ่มหน้า/DB/config/component)** | **[รองรับการขยายโปรเจกต์ไหม](#รองรับการขยายโปรเจกต์ไหม-เมื่อทำตาม-srs)** |
 | สรุปโปรเจกต์ (EN) | [Summary](#summary) |
 | วิธีเริ่มต้น | [Quick Start](#quick-start) |
 | คำสั่งใน package.json | [Scripts](#scripts) |
