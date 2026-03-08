@@ -1,6 +1,17 @@
 # KAFUNG Coffee Bar
 
-A Next.js 15 (App Router) coffee shop project with menu and order management, auth-protected routes, and REST API for CRUD operations.
+A Next.js 15 (App Router) coffee shop project with menu and order management, auth-protected routes, REST API for CRUD, and **unit tests** for pricing, offline sync, inventory (BOM), order scheduling, and membership loyalty.
+
+---
+
+## Summary
+
+| Area | Description |
+|------|-------------|
+| **App** | Home, Login, Menu, Order pages; middleware protects `/menu` and `/order` with `auth-token` cookie. |
+| **API** | REST CRUD for `/api/menu` and `/api/orders` (ready to plug in Prisma/Supabase). |
+| **Business logic** | Pricing (base + options + member discount + promotion + VAT), offline order queue, inventory/BOM, pickup scheduling, loyalty points & tiers. |
+| **Tests** | Vitest + React Testing Library; tests for all of the above logic and API validation. |
 
 ---
 
@@ -31,6 +42,43 @@ Open [http://localhost:3000](http://localhost:3000).
 | `pnpm build` | Build for production            |
 | `pnpm start` | Run production build             |
 | `pnpm lint`  | Run ESLint                      |
+| `pnpm test`  | Run unit tests (watch)           |
+| `pnpm test:run` | Run unit tests once            |
+
+| `pnpm test:run` | Run unit tests once            |
+| `pnpm test:ui`  | Run tests with Vitest UI       |
+| `pnpm test:coverage` | Run tests with coverage report |
+
+---
+
+## What each file does (added for features & tests)
+
+### Source (logic)
+
+| File | Purpose |
+|------|--------|
+| `src/lib/constants.js` | Shared config: `PROTECTED_PATHS` for middleware; add paths here to protect new routes. |
+| `src/lib/utils.js` | `cn()` — merges Tailwind class names (clsx + tailwind-merge). |
+| `src/lib/pricing.js` | **Pricing engine**: subtotal (base + options), member discount (role-based), promotion (percent/fixed), VAT 7%, and full pipeline `calculateOrderTotal()`. |
+| `src/lib/offline-db.js` | **Offline queue**: add orders to queue (localStorage), get pending, update status (synced/failed), clear after sync. Used when `navigator.onLine` is false. |
+| `src/hooks/useSyncQueue.js` | Re-exports offline-db helpers for components; can be extended to trigger sync when online. |
+| `src/lib/date-utils.js` | **Order scheduling**: check if time is within operating hours (e.g. 07:00–18:00), block past time, lead time (e.g. 15 min), holiday/closure list, and `validatePickupTime()`. |
+| `src/lib/loyalty.js` | **Membership**: points earned (e.g. 10 THB = 1 point), update accumulated points, tier by spend (Bronze/Silver/Gold), redemption validation and `redeemPoints()`. |
+| `src/services/inventoryService.js` | **Inventory / BOM**: get required ingredients per product variant and quantity, check stock before order, deduct stock, aggregate requirements for multiple items; used for “Out” transactions. |
+
+### Test files
+
+| File | What it tests |
+|------|----------------|
+| `src/lib/utils.test.js` | `cn()` — merge classes, conditionals, Tailwind override. |
+| `src/lib/constants.test.js` | `PROTECTED_PATHS` contains `/menu`, `/order` and is a valid array. |
+| `src/lib/pricing.test.js` | Pricing engine: base+options, member/vip discount, promotion %, fixed, VAT, full pipeline. |
+| `src/lib/offline-db.test.js` | Offline queue: add when offline, pending status, update synced/failed, clear after sync, conflict handling. |
+| `src/lib/date-utils.test.js` | Scheduling: operating hours, past block, lead time, holidays, `validatePickupTime()`. |
+| `src/lib/loyalty.test.js` | Loyalty: points earned, accumulated points, tier upgrade, redemption validation. |
+| `src/services/inventoryService.test.js` | BOM: required ingredients, prevent order when low stock, deduct exact amount, Out transaction, aggregate. |
+| `src/app/api/menu/route.test.js` | Menu API: GET returns items array; POST 400 when name/price missing, 201 with body when valid. |
+| `src/app/components/Header.test.jsx` | Header: renders brand “KAFUNG”, “coffee bar”, LOGIN button, cart button. |
 
 ---
 
@@ -62,12 +110,21 @@ my-app/
 │   │   └── page.js             # Home page
 │   ├── lib/
 │   │   ├── constants.js        # PROTECTED_PATHS, shared config
+│   │   ├── date-utils.js       # Order scheduling, business hours
+│   │   ├── offline-db.js       # Offline queue (localStorage)
+│   │   ├── loyalty.js         # Points & tiers
+│   │   ├── pricing.js         # POS pricing & discount engine
 │   │   └── utils.js            # cn() for Tailwind
+│   ├── hooks/
+│   │   └── useSyncQueue.js    # Offline sync facade
+│   ├── services/
+│   │   └── inventoryService.js # BOM & stock deduction
 │   └── middleware.js          # Auth check for /menu, /order
 ├── .env.example
 ├── jsconfig.json              # Path alias: @/* → ./src/*
 ├── next.config.mjs
 ├── package.json
+├── vitest.config.mjs          # Vitest: jsdom, include src/**/*.test.{js,jsx}, @ alias
 └── README.md
 ```
 
@@ -144,6 +201,52 @@ curl -X POST http://localhost:3000/api/orders \
 
 ---
 
+## Unit Tests (Vitest)
+
+### What is Vitest and why use it
+
+- **Vitest** is a unit test runner that uses the same config as Vite (fast, ESM-native). It is the recommended choice for unit testing Next.js apps (see [Next.js Testing guide](https://nextjs.org/docs/app/guides/testing/vitest)).
+- **Principles**: Tests run in isolation; each `describe` groups related scenarios, each `it`/`test` asserts one behaviour. We use **jsdom** so DOM APIs (e.g. `localStorage`, `navigator`) exist; we use **@testing-library/react** for component tests.
+- **Convention**: Test files live next to or near the code they test, with the name `*.test.js` or `*.test.jsx`. The config only runs `src/**/*.test.{js,jsx}`.
+
+### How to run tests
+
+```bash
+pnpm install          # install deps (vitest, jsdom, @testing-library/*)
+pnpm test             # watch mode — re-runs on file change
+pnpm test:run         # run once (e.g. for CI)
+pnpm test:ui          # open Vitest UI in browser
+pnpm test:coverage    # run once and output coverage report
+```
+
+- **Watch mode** (`pnpm test`): Leave it running while developing; tests re-run when you save.
+- **Single run** (`pnpm test:run`): Use in CI or to get a quick pass/fail.
+- **Config**: `vitest.config.mjs` sets `environment: "jsdom"`, `include: ["src/**/*.test.{js,jsx}]`, and path alias `@` → `src/`.
+
+### Test topics and feature coverage
+
+| Topic | Test file | Feature IDs | What is tested |
+|-------|-----------|--------------|----------------|
+| **Pricing engine** | `src/lib/pricing.test.js` | MNU-02, MNU-03, TC-01, TC-02 | Base price + options (Milk, Sweetness, Topping); normal vs member/vip price; promotion (percentage and fixed); VAT 7%; full pipeline from base to total. |
+| **Offline sync & queue** | `src/lib/offline-db.test.js` | PRF-01, PRF-05, TC-09, TC-10, TC-11 | Add order to queue when offline; order has `pending` status; get pending for sync; mark as synced/failed (e.g. conflict / out of stock); clear queue after successful sync. |
+| **Inventory & BOM** | `src/services/inventoryService.test.js` | INV-01, TC-22, TC-26 | Required ingredients for a product variant and quantity; prevent order if any ingredient is below required; deduct exact amount from stock; “Out” transaction log; aggregate requirements for multiple items. |
+| **Order scheduling** | `src/lib/date-utils.test.js` | CUS-02, TC-15 | Time within store hours (e.g. 07:00–18:00); block past date/time; lead time (e.g. 15 min in advance); holiday/closure dates; full `validatePickupTime()`. |
+| **Membership & loyalty** | `src/lib/loyalty.test.js` | MEM-01, TC-28, TC-29 | Points earned (e.g. 10 THB = 1 point); update accumulated points; tier upgrade (Bronze → Silver → Gold) by spend threshold; redemption validation (cannot redeem more than available). |
+| **Utils & constants** | `src/lib/utils.test.js`, `src/lib/constants.test.js` | — | `cn()` merge and Tailwind behaviour; `PROTECTED_PATHS` content and shape. |
+| **Menu API** | `src/app/api/menu/route.test.js` | — | GET returns `{ items }`; POST validation (400 when name/price missing), 201 and body when valid. |
+| **Header component** | `src/app/components/Header.test.jsx` | — | Renders brand, subtitle, LOGIN button, cart button. |
+
+### Quick reference: test commands
+
+| Command | Use case |
+|---------|----------|
+| `pnpm test` | Development — watch and re-run on save |
+| `pnpm test:run` | CI or one-off run |
+| `pnpm test:ui` | Visual UI to run/filter tests |
+| `pnpm test:coverage` | Coverage report |
+
+---
+
 ## Environment Variables
 
 Copy `.env.example` to `.env.local` and set:
@@ -185,6 +288,7 @@ Defined in `jsconfig.json` → `"@/*": ["./src/*"]`.
 - **Next.js 15** (App Router, Turbopack)
 - **React 19**
 - **Tailwind CSS 4**
+- **Vitest** (unit tests), **jsdom**, **@testing-library/react**
 - **Prisma** (optional, for DB)
 - **Supabase** (optional, for Auth/backend)
 - **Zod** (validation)
