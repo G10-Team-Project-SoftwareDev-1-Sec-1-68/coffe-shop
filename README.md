@@ -50,12 +50,41 @@ pnpm dev
 
 ---
 
+## การแก้ไข UI ที่ทำไปแล้ว + วิธีแก้ต่อ
+
+### สรุปว่าแก้ UI อะไรไปบ้าง
+
+| ส่วน | ไฟล์ | สิ่งที่เปลี่ยน |
+|------|------|----------------|
+| **ธีมสี (โทนน้ำตาลกาแฟ)** | `src/app/globals.css` | ตั้งค่า `:root` ใหม่: พื้นหลังโทนครีม/ขาว, ตัวอักษรและปุ่มโทนน้ำตาลเข้ม, สีทองสำหรับ accent (โลโก้). เพิ่มตัวแปร `--coffee-dark`, `--coffee-gold` และผูกกับ `@theme` ให้ใช้ class เช่น `bg-primary`, `bg-coffee-gold` ได้ |
+| **Landing page (หน้าแรก)** | `src/app/page.js` | เพิ่ม Hero (หัวข้อ "Discover The Art Of Perfect Coffee", ข้อความใต้หัวข้อ, ปุ่ม Order Now), แถบสีน้ำตาลด้านบน (เวลาเปิดบริการ), บล็อกสถิติ (1K+ Reviews, 3K+ Best Sell, 150+ Menu), ส่วน "Our Delicious Services" พร้อมการ์ดบริการ 3 อัน. ภาพถ้วยกาแฟด้านขวาเป็น placeholder (ไอคอน) รอแทนที่ด้วยรูปใน `public/` ได้ |
+| **Header** | `src/app/components/Header.jsx` | เก็บโลโก้เดิม (KAFUNG + coffee bar + ไอคอน ☕). เพิ่มลิงก์เมนู: Home, Services, Menu, Reviews. เพิ่มไอคอนค้นหา (Search), ตะกร้า (ลิงก์ไป `/order`), ปุ่ม Signup (ลิงก์ไป `/login`). ใช้สีจาก theme (พื้นหลังไม่ใช่สีเดียวกับเดิม) |
+| **shadcn** | `components.json` | ยังใช้ `baseColor: "stone"` อยู่ — สีจริงถูก override ใน `globals.css` แล้ว ดังนั้นปุ่ม/การ์ดจาก shadcn จะได้โทนน้ำตาลตาม theme |
+
+### ถ้าจะมาแก้ UI ต่อ ต้องทำยังไง
+
+| อยากแก้ | ไปที่ไฟล์/ขั้นตอน |
+|--------|---------------------|
+| **ข้อความบนหน้าแรก** (หัวข้อ,  paragraph, ปุ่ม) | แก้ใน `src/app/page.js` — หา `<h1>`, `<p>`, ข้อความใน section แล้วแก้ตรงนั้น |
+| **สีทั้งโปรเจกต์** (โทนน้ำตาล, สีปุ่ม, พื้นหลัง) | แก้ใน `src/app/globals.css` ในบล็อก `:root` — เปลี่ยนค่า `--primary`, `--background`, `--foreground`, `--muted`, `--accent` ฯลฯ (ใช้รูปแบบ oklch หรือ hex ตามที่ theme รองรับ). ถ้าเพิ่มสีใหม่ ให้เพิ่มใน `:root` และใน `@theme inline` เป็น `--color-ชื่อสี` |
+| **รูปภาพ Hero (ถ้วยกาแฟ)** | ใส่รูปในโฟลเดอร์ `public/` (เช่น `public/hero-coffee.png`). ใน `src/app/page.js` ในส่วน Hero ด้านขวา แทนที่ `<div>…☕</div>` ด้วย `<Image src="/hero-coffee.png" alt="..." width={400} height={400} />` และ `import Image from "next/image"` |
+| **เมนูบน Header** (เพิ่ม/ลด/เปลี่ยนลิงก์) | แก้ใน `src/app/components/Header.jsx` — แก้ array `navLinks` หรือปุ่ม/ลิงก์ด้านขวา (Search, Cart, Signup). ถ้าเพิ่ม route ใหม่ที่ต้องล็อกอิน ต้องไปเพิ่ม path ใน `src/lib/constants.js` (PROTECTED_PATHS) ด้วย |
+| **โลโก้** | แก้ใน `src/app/components/Header.jsx` — ส่วน `<Link href="/">` ด้านซ้าย: เปลี่ยนข้อความ "KAFUNG" / "coffee bar" หรือเปลี่ยนไอคอน ☕ เป็น `<img>` ถ้ามีไฟล์โลโก้ |
+| **เพิ่ม section ในหน้าแรก** (เช่น Reviews, Gallery) | เปิด `src/app/page.js` — เพิ่ม `<section>` ใหม่ใต้หรือเหนือ section ที่มีอยู่ ใช้โครงแบบ "Our Delicious Services" (หัวข้อ + grid การ์ด) ได้. ถ้าให้ลิงก์จาก Header ไปถึง section ใช้ `id="reviews"` แล้วลิงก์เป็น `href="#reviews"` |
+| **ปุ่ม/การ์ด/ฟอร์มจาก shadcn** | รัน `npx shadcn@latest add button` (หรือ card, input ฯลฯ) โค้ดจะไปที่ `src/components/ui/` หรือตามที่ตั้งใน `components.json`. สีจะตาม theme ใน `globals.css` อัตโนมัติ |
+| **เวลาเปิดบริการ (แถบด้านบน)** | แก้ใน `src/app/page.js` — หา `<p className="text-center ...">` ในส่วน "Dark brown top band" แล้วแก้ข้อความตรงนั้น |
+
+แก้เสร็จแล้วรัน `pnpm dev` ดูผลที่ [http://localhost:3000](http://localhost:3000) ถ้าแก้หลายจุด แนะนำให้ commit ทีละส่วนแล้วค่อยอัปเดต README (ตาราง [Pages](#pages), [What each file does](#what-each-file-does-added-for-features--tests)) ให้ตรงกับโปรเจกต์
+
+---
+
 ## สารบัญ (Table of Contents)
 
 | หัวข้อ | ลิงก์ |
 |--------|--------|
 | **สรุปภาษาไทย (สำหรับเพื่อน)** | **[สรุปโปรเจกต์](#สรุปโปรเจกต์-สำหรับเพื่อน)** |
 | **รองรับการขยาย (เพิ่มหน้า/DB/config/component)** | **[รองรับการขยายโปรเจกต์ไหม](#รองรับการขยายโปรเจกต์ไหม-เมื่อทำตาม-srs)** |
+| **แก้ UI / แก้ต่อ (ธีม, Landing, Header)** | **[การแก้ไข UI ที่ทำไปแล้ว + วิธีแก้ต่อ](#การแก้ไข-ui-ที่ทำไปแล้ว--วิธีแก้ต่อ)** |
 | สรุปโปรเจกต์ (EN) | [Summary](#summary) |
 | วิธีเริ่มต้น | [Quick Start](#quick-start) |
 | คำสั่งใน package.json | [Scripts](#scripts) |
@@ -99,6 +128,8 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+**ถ้า `pnpm run dev` หรือ `pnpm dev` ไม่ได้ (เช่น `next: command not found`):** ให้รัน `pnpm install` ก่อนในโฟลเดอร์ `my-app` เพื่อติดตั้ง dependencies แล้วค่อยรัน `pnpm dev` อีกครั้ง
 
 ---
 
