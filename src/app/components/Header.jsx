@@ -1,38 +1,72 @@
+"use client";
+
+import Link from "next/link";
+import { ShoppingCart, Search } from "lucide-react";
+
+const navLinks = [
+  { href: "/", label: "Home" },
+  { href: "#services", label: "Services" },
+  { href: "/menu", label: "Menu" },
+  { href: "#reviews", label: "Reviews" },
+];
+
 export default function Header() {
   return (
-    <header className="w-full border-b border-border bg-[#A17356] text-white">
+    <header className="w-full border-b border-border bg-background text-foreground">
       <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6 lg:px-8">
-        <div className="flex items-center gap-4">
+        {/* Logo — โลโก้เดิม KAFUNG coffee bar */}
+        <Link href="/" className="flex items-center gap-3">
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-coffee-gold text-primary"
+            aria-hidden
+          >
+            <span className="text-xl">☕</span>
+          </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-2xl font-semibold tracking-[0.2em] uppercase">
-              K A F U N G
+            <span className="text-xl font-semibold tracking-wide text-foreground">
+              KAFUNG
             </span>
-            <span className="text-sm text-white/80 -mt-1">
+            <span className="text-xs text-muted-foreground -mt-0.5">
               coffee bar
             </span>
           </div>
-        </div>
+        </Link>
 
-        <div className="flex items-center gap-6">
+        {/* Nav */}
+        <nav className="hidden items-center gap-8 md:flex" aria-label="หลัก">
+          {navLinks.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="text-sm font-medium text-foreground transition hover:text-primary"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Right: search, cart, signup */}
+        <div className="flex items-center gap-4">
           <button
             type="button"
-            className="rounded-2xl border border-border px-5 py-2 text-sm font-medium tracking-wide hover:bg-muted"
+            className="rounded-full p-2 text-foreground transition hover:bg-muted"
+            aria-label="ค้นหา"
           >
-            LOGIN
+            <Search className="h-5 w-5" />
           </button>
-
-          <button
-            type="button"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm hover:opacity-90"
-            aria-label="Cart"
+          <Link
+            href="/order"
+            className="rounded-full p-2 text-foreground transition hover:bg-muted"
+            aria-label="ตะกร้า"
           >
-            {/* simple basket icon approximation */}
-            <span className="block h-4 w-4 rounded-sm border-[2px] border-primary-foreground border-b-0" />
-            <span className="absolute bottom-[10px] flex h-1 w-3 items-center justify-between">
-              <span className="block h-1 w-[2px] rounded-full bg-primary-foreground" />
-              <span className="block h-1 w-[2px] rounded-full bg-primary-foreground" />
-            </span>
-          </button>
+            <ShoppingCart className="h-5 w-5" />
+          </Link>
+          <Link
+            href="/login"
+            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90"
+          >
+            Signup
+          </Link>
         </div>
       </div>
     </header>
