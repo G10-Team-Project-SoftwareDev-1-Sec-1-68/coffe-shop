@@ -62,10 +62,10 @@ export default function Header() {
             <ShoppingCart className="h-5 w-5" />
           </Link>
           <Link
-            href="/login"
+            href="/register"
             className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90"
           >
-            Signup
+            สมัครสมาชิก
           </Link>
         </div>
       </div>
