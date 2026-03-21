@@ -347,6 +347,7 @@ npx shadcn@latest add button --overwrite
 | `src/lib/loyalty.test.js` | Loyalty: points earned, accumulated points, tier upgrade, redemption validation. |
 | `src/services/inventoryService.test.js` | BOM: required ingredients, prevent order when low stock, deduct exact amount, Out transaction, aggregate. |
 | `src/app/api/menu/route.test.js` | Menu API: GET returns items array; POST 400 when name/price missing, 201 with body when valid. |
+| `src/app/api/auth/register/route.test.js` | Auth register API: invalid body → 400, existing email → 409, successful registration → 201 with created user. |
 | `src/app/components/Header.test.jsx` | Header: renders brand “KAFUNG”, “coffee bar”, LOGIN button, cart button. |
 
 ---
@@ -415,6 +416,7 @@ my-app/
 |-------|-------------|------|
 | `/` | Home / landing | No |
 | `/login` | Login | No |
+| `/register` | Register new account | No |
 | `/menu` | Menu listing | Yes |
 | `/order` | Order | Yes |
 
@@ -448,6 +450,21 @@ curl -X POST http://localhost:3000/api/menu \
 
 ```bash
 curl http://localhost:3000/api/menu
+```
+
+### Auth
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/auth/register` | Register new user with email/password (Zod-validated). Sets `auth-token` cookie on success. |
+| `POST` | `/api/auth/login` | Login with email/password. Verifies bcrypt hash and sets `auth-token` cookie. |
+
+**Example: Register**
+
+```bash
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password123","name":"User"}'
 ```
 
 ### Orders
@@ -486,6 +503,9 @@ pnpm test             # watch mode — re-runs on file change
 pnpm test:run         # run once (e.g. for CI)
 pnpm test:ui          # open Vitest UI in browser
 pnpm test:coverage    # run once and output coverage report
+
+# run only auth register API tests
+pnpm vitest src/app/api/auth/register/route.test.js
 ```
 
 - **Watch mode** (`pnpm test`): Leave it running while developing; tests re-run when you save.
