@@ -4,53 +4,82 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // ลบบรรทัด url = env("DATABASE_URL") ทิ้งไปเลยครับ
+  // url ถูกย้ายไปที่ prisma.config.mjs ตามมาตรฐาน Prisma 7 แล้ว
 }
 
 // ==========================================
-// 1. Users & Roles (ระบบผู้ใช้งานและสิทธิ์)
+// ENUMS (ตัวเลือกตายตัว)
 // ==========================================
 enum Role {
-  CUSTOMER  // ลูกค้าทั่วไป (ซื้อกาแฟออนไลน์)
-  STAFF     // พนักงาน (เข้าใช้ POS)
-  ADMIN     // ผู้ดูแลระบบ (เข้า Dashboard)
+  CUSTOMER
+  STAFF
+  ADMIN
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String   // เก็บ Hash ของรหัสผ่าน
-  firstName String
-  lastName  String?
-  phone     String?  @unique
-  role      Role     @default(CUSTOMER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum OrderType {
+  ONLINE
+  POS
+}
 
-  // ความสัมพันธ์ (Relations)
+enum OrderStatus {
+  PENDING
+  PREPARING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  QR_CODE
+  CREDIT_CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// ==========================================
+// 1. Users & Roles (ระบบผู้ใช้งาน สมาชิก และสิทธิ์)
+// ==========================================
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String    
+  firstName     String
+  lastName      String?
+  phone         String?   @unique
+  role          Role      @default(CUSTOMER)
+  
+  // ระบบสมาชิก (Loyalty)
+  points        Int       @default(0)       
+  memberTier    String    @default("BRONZE") 
+  
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
   ordersAsCustomer Order[]    @relation("CustomerOrders")
   ordersAsStaff    Order[]    @relation("StaffOrders")
   auditLogs        AuditLog[]
+  pointLogs        PointLog[] 
+}
+
+model PointLog {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Int      
+  reason      String   
+  orderId     String?  
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
 }
 
 // ==========================================
-// 2. Audit Logs (ระบบเก็บประวัติการใช้งาน)
-// ==========================================
-model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String
-  action    String   // เช่น "LOGIN", "CREATE_ORDER", "UPDATE_MENU"
-  entity    String?  // ตารางที่เกี่ยวข้อง เช่น "Product", "Order"
-  entityId  String?  // ID ของข้อมูลที่ถูกกระทำ
-  details   Json?    // เก็บข้อมูลเพิ่มเติม เช่น { "ip": "192...", "oldValue": "..." }
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-}
-
-// ==========================================
-// 3. Products & Menu (ข้อมูลกาแฟ/สินค้า)
+// 2. Products, Categories & Inventory (ระบบสินค้าและสต็อก)
 // ==========================================
 model Category {
   id          String    @id @default(uuid())
@@ -70,40 +99,67 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  category   Category    @relation(fields: [categoryId], references: [id])
-  orderItems OrderItem[]
+  category    Category            @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
+  ingredients ProductIngredient[] // [แก้ไข]: เพิ่มเพื่อรับ relation จาก ProductIngredient
+}
+
+model Ingredient {
+  id          String   @id @default(uuid())
+  name        String   
+  stockQty    Float    @default(0) 
+  unit        String   
+  minQty      Float    @default(10) 
+  
+  products    ProductIngredient[] 
+}
+
+model ProductIngredient {
+  id           String     @id @default(uuid())
+  productId    String
+  ingredientId String
+  amount       Float      
+  
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
 }
 
 // ==========================================
-// 4. Orders (ระบบคำสั่งซื้อ)
+// 3. Promotions (ระบบโปรโมชัน)
 // ==========================================
-enum OrderType {
-  ONLINE // สั่งผ่านเว็บ (ลูกค้าสั่งเอง)
-  POS    // สั่งหน้าร้าน (พนักงานคีย์)
+model Promotion {
+  id            String    @id @default(uuid())
+  code          String    @unique 
+  description   String?
+  discountValue Decimal   @db.Decimal(10, 2)
+  isPercent     Boolean   @default(true) 
+  startDate     DateTime
+  endDate       DateTime
+  isActive      Boolean   @default(true)
+  
+  orders        Order[]   
 }
 
-enum OrderStatus {
-  PENDING    // รอดำเนินการ
-  PREPARING  // กำลังทำ
-  COMPLETED  // เสร็จสิ้น/รับของแล้ว
-  CANCELLED  // ยกเลิก
-}
-
+// ==========================================
+// 4. Orders & Payments (ระบบคำสั่งซื้อและการชำระเงิน)
+// ==========================================
 model Order {
   id          String      @id @default(uuid())
-  orderNumber String      @unique // เลขที่บิล เช่น KAF-2401001
-  customerId  String?     // Nullable เพราะลูกค้าหน้าร้านอาจจะไม่บอกชื่อ
-  staffId     String?     // Nullable เพราะสั่งออนไลน์จะไม่มีพนักงานคีย์
+  orderNumber String      @unique 
+  customerId  String?     
+  staffId     String?     
+  promotionId String?     // [แก้ไข]: เพิ่มเพื่อเก็บไอดีโปรโมชันที่ใช้
   type        OrderType
   status      OrderStatus @default(PENDING)
   totalAmount Decimal     @db.Decimal(10, 2)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  customer User?       @relation("CustomerOrders", fields: [customerId], references: [id])
-  staff    User?       @relation("StaffOrders", fields: [staffId], references: [id])
-  items    OrderItem[]
-  payment  Payment?
+  customer    User?       @relation("CustomerOrders", fields: [customerId], references: [id])
+  staff       User?       @relation("StaffOrders", fields: [staffId], references: [id])
+  promotion   Promotion?  @relation(fields: [promotionId], references: [id]) // [แก้ไข]: รับ relation จาก Promotion
+  items       OrderItem[]
+  payment     Payment?
 }
 
 model OrderItem {
@@ -111,27 +167,11 @@ model OrderItem {
   orderId     String
   productId   String
   quantity    Int
-  priceAtTime Decimal @db.Decimal(10, 2) // เก็บราคา ณ ตอนที่ซื้อ (กันราคาเปลี่ยนในอนาคต)
-  options     Json?   // เก็บ Option เพิ่มเติม เช่น { "sweetness": "50%", "type": "Hot" }
+  priceAtTime Decimal @db.Decimal(10, 2) 
+  options     Json?   
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
-}
-
-// ==========================================
-// 5. Payments (ระบบการชำระเงิน)
-// ==========================================
-enum PaymentMethod {
-  CASH
-  QR_CODE
-  CREDIT_CARD
-}
-
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id])
 }
 
 model Payment {
@@ -140,10 +180,28 @@ model Payment {
   method        PaymentMethod
   status        PaymentStatus @default(PENDING)
   amount        Decimal       @db.Decimal(10, 2)
-  referenceNo   String?       // ไว้เก็บเลขอ้างอิงโอนเงินจาก QR Code
-  qrPayload     String?       // (Optional) ไว้เก็บ Data/Text สำหรับ Gen QR ให้ลูกค้าสแกน
+  referenceNo   String?       
+  qrPayload     String?       
   paidAt        DateTime?
   createdAt     DateTime      @default(now())
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// 5. Audit Logs (ระบบบันทึกประวัติการทำงาน)
+// ==========================================
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String   
+  entity    String?  
+  entityId  String?  
+  details   Json?    
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])    
+  @@index([createdAt]) 
 }
