@@ -6,6 +6,9 @@ import { defineConfig } from '@prisma/config'
 console.log("🔍 Checking DATABASE_URL:", process.env.DATABASE_URL)
 
 export default defineConfig({
+    migrations: {
+        seed: 'node ./prisma/seed.js',
+      },
   datasource: {
     url: process.env.DATABASE_URL,
   },
