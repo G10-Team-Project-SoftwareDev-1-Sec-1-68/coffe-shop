@@ -42,58 +42,59 @@ export default function LoginPage() {
       <Header />
       <div className="flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-md rounded-2xl bg-card shadow-lg border border-border px-8 py-10 space-y-8">
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            เข้าสู่ระบบ
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            ยินดีต้อนรับกลับมา เลือกวิธีการเข้าสู่ระบบของคุณ
-          </p>
-        </div>
-
-        <form className="space-y-6" onSubmit={onSubmit}>
-          <div className="space-y-2">
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-foreground"
-            >
-              อีเมล
-            </label>
-            <input
-              id="email"
-              type="email"
-              name="email"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="you@example.com"
-              required
-            />
+          <div className="space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              เข้าสู่ระบบ
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              ยินดีต้อนรับกลับมา เลือกวิธีการเข้าสู่ระบบของคุณ
+            </p>
           </div>
 
-          <div className="space-y-2">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-foreground"
-            >
-              รหัสผ่าน
-            </label>
-            <input
-              id="password"
-              type="password"
-              name="password"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="••••••••"
-              required
-            />
-          </div>
+          <form className="space-y-6" onSubmit={onSubmit}>
+            <div className="space-y-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-foreground"
+              >
+                อีเมล
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-4 w-full rounded-2xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
-          </button>
-        </form>
+              </label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-foreground"
+              >
+                รหัสผ่าน
+              </label>
+              <input
+                id="password"
+                type="password"
+                name="password"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-4 w-full rounded-2xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+            </button>
+          </form>
 
           {error ? (
             <p className="text-center text-sm text-destructive">{error}</p>
