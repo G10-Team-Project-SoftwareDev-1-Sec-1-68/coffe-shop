@@ -137,7 +137,7 @@ pnpx prisma studio
 | Area | Description |
 |------|-------------|
 | **App** | Home, Login, Menu, Order pages; middleware protects `/menu` and `/order` with `auth-token` cookie. |
-| **API** | REST CRUD for `/api/menu` and `/api/orders` (ready to plug in Prisma/Supabase). |
+| **API** | REST CRUD for `/api/menu` and `/api/orders` (ready to plug in Prisma). |
 | **Business logic** | Pricing (base + options + member discount + promotion + VAT), offline order queue, inventory/BOM, pickup scheduling, loyalty points & tiers. |
 | **Tests** | Vitest + React Testing Library; tests for all of the above logic and API validation. |
 
@@ -553,8 +553,6 @@ Copy `.env.example` to `.env.local` and set:
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (if using Supabase Auth/Storage). |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key. |
 | `DATABASE_URL` | PostgreSQL connection string (if using Prisma). |
 
 ---
@@ -590,6 +588,5 @@ Defined in `jsconfig.json` → `"@/*": ["./src/*"]`.
 - **Tailwind CSS 4**
 - **Vitest** (unit tests), **jsdom**, **@testing-library/react**
 - **Prisma** (optional, for DB)
-- **Supabase** (optional, for Auth/backend)
 - **Zod** (validation)
 - **shadcn/ui** (components)
