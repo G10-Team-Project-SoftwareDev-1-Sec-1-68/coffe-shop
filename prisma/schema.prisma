@@ -8,7 +8,7 @@ datasource db {
 }
 
 // ==========================================
-// ENUMS (ตัวเลือกตายตัว)
+// ENUMS
 // ==========================================
 enum Role {
   CUSTOMER
@@ -22,16 +22,19 @@ enum OrderType {
 }
 
 enum OrderStatus {
-  PENDING
-  PREPARING
-  COMPLETED
-  CANCELLED
+  PENDING     // รอยืนยัน
+  PREPARING   // กำลังทำ
+  READY       // เสร็จพร้อมรับ  [เพิ่ม - ORD-02]
+  COMPLETED   // รับแล้ว
+  CANCELLED   // ยกเลิก
 }
 
 enum PaymentMethod {
   CASH
   QR_CODE
   CREDIT_CARD
+  E_WALLET    // [เพิ่ม - PAY-01]
+  POINTS      // [เพิ่ม - PAY-01: แลกด้วยคะแนนสะสม]
 }
 
 enum PaymentStatus {
@@ -41,50 +44,84 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum TransactionType {
+  RESTOCK
+  SALE
+  WASTE       // ติดตาม waste สำหรับ RPT-02
+  ADJUSTMENT
+}
+
+enum PickupMethod {
+  SELF_PICKUP // [เพิ่ม - CUS-02: รับเอง]
+  DELIVERY    // [เพิ่ม - CUS-02: ส่ง]
+}
+
 // ==========================================
-// 1. Users & Roles (ระบบผู้ใช้งาน สมาชิก และสิทธิ์)
+// 1. Users & Membership
 // ==========================================
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  password      String    
+  id            String  @id @default(uuid())
+  email         String  @unique
+  password      String
   firstName     String
   lastName      String?
-  phone         String?   @unique
-  role          Role      @default(CUSTOMER)
-  
-  // ระบบสมาชิก (Loyalty)
-  points        Int       @default(0)       
-  memberTier    String    @default("BRONZE") 
-  
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  phone         String? @unique
+  role          Role    @default(CUSTOMER)
 
-  ordersAsCustomer Order[]    @relation("CustomerOrders")
-  ordersAsStaff    Order[]    @relation("StaffOrders")
+  // Loyalty System (MEM-01)
+  points        Int    @default(0)
+  memberTier    String @default("BRONZE")
+
+  // Localization (USB-01: รองรับภาษาอื่นๆ)
+  preferredLang String @default("th")
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ordersAsCustomer Order[]         @relation("CustomerOrders")
+  ordersAsStaff    Order[]         @relation("StaffOrders")
+  pointLogs        PointLog[]
   auditLogs        AuditLog[]
-  pointLogs        PointLog[] 
+  passwordResets   PasswordReset[] // [เพิ่ม - CUS-01]
+  notifications    Notification[]  // [เพิ่ม - CUS-04]
+}
+
+// [เพิ่มใหม่ - CUS-01: กู้คืนรหัสผ่านด้วย OTP / token]
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
 }
 
 model PointLog {
-  id          String   @id @default(uuid())
-  userId      String
-  amount      Int      
-  reason      String   
-  orderId     String?  
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Int      // บวก = ได้แต้ม, ลบ = ใช้แต้ม
+  reason    String
+  orderId   String?
+  createdAt DateTime @default(now())
 
-  user        User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 // ==========================================
-// 2. Products, Categories & Inventory (ระบบสินค้าและสต็อก)
+// 2. Products, Categories & BOM (Inventory)
 // ==========================================
 model Category {
   id          String    @id @default(uuid())
   name        String    @unique
   description String?
+  sortOrder   Int       @default(0) // [เพิ่ม - MNU-01: จัดลำดับหมวดหมู่]
   products    Product[]
 }
 
@@ -93,115 +130,192 @@ model Product {
   categoryId  String
   name        String
   description String?
-  price       Decimal  @db.Decimal(10, 2)
   imageUrl    String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  category    Category            @relation(fields: [categoryId], references: [id])
-  orderItems  OrderItem[]
-  ingredients ProductIngredient[] // [แก้ไข]: เพิ่มเพื่อรับ relation จาก ProductIngredient
+  category Category         @relation(fields: [categoryId], references: [id])
+  variants ProductVariant[]
+  options  ProductOption[]
+}
+
+model ProductVariant {
+  id          String   @id @default(uuid())
+  productId   String
+  name        String   // Hot, Iced, Frappe
+  price       Decimal  @db.Decimal(10, 2)
+  memberPrice Decimal? @db.Decimal(10, 2) // [เพิ่ม - MNU-03: ราคาสมาชิก]
+  sku         String?  @unique
+
+  product    Product     @relation(fields: [productId], references: [id])
+  recipes    Recipe[]
+  orderItems OrderItem[]
+}
+
+model ProductOption {
+  id         String  @id @default(uuid())
+  productId  String
+  name       String  // Sweetness, Oat Milk, Extra Shot (MNU-02)
+  extraPrice Decimal @default(0) @db.Decimal(10, 2)
+
+  product Product  @relation(fields: [productId], references: [id])
+  recipes Recipe[]
 }
 
 model Ingredient {
-  id          String   @id @default(uuid())
-  name        String   
-  stockQty    Float    @default(0) 
-  unit        String   
-  minQty      Float    @default(10) 
-  
-  products    ProductIngredient[] 
+  id         String    @id @default(uuid())
+  name       String
+  stockQty   Float     @default(0)
+  unit       String
+  minQty     Float     @default(10)  // จุดแจ้งเตือนใกล้หมด (INV-02)
+  reorderQty Float     @default(50)  // [เพิ่ม - INV-02: ถึงจุดสั่งซื้อ]
+  expiresAt  DateTime?              // [เพิ่ม - INV-02: แจ้งเตือนหมดอายุ]
+
+  recipes      Recipe[]
+  transactions InventoryTransaction[]
 }
 
-model ProductIngredient {
-  id           String     @id @default(uuid())
-  productId    String
+model Recipe {
+  id              String  @id @default(uuid())
+  ingredientId    String
+  variantId       String?
+  productOptionId String?
+  quantity        Float
+
+  ingredient    Ingredient      @relation(fields: [ingredientId], references: [id])
+  variant       ProductVariant? @relation(fields: [variantId], references: [id])
+  productOption ProductOption?  @relation(fields: [productOptionId], references: [id])
+}
+
+model InventoryTransaction {
+  id           String          @id @default(uuid())
   ingredientId String
-  amount       Float      
-  
-  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  type         TransactionType
+  quantity     Float
+  reason       String?
+  createdAt    DateTime        @default(now())
+
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@index([ingredientId])
+  @@index([createdAt])
 }
 
 // ==========================================
-// 3. Promotions (ระบบโปรโมชัน)
+// 3. Promotions & Orders
 // ==========================================
 model Promotion {
-  id            String    @id @default(uuid())
-  code          String    @unique 
-  description   String?
-  discountValue Decimal   @db.Decimal(10, 2)
-  isPercent     Boolean   @default(true) 
-  startDate     DateTime
-  endDate       DateTime
-  isActive      Boolean   @default(true)
-  
-  orders        Order[]   
+  id             String   @id @default(uuid())
+  code           String   @unique
+  description    String?
+  discountValue  Decimal  @db.Decimal(10, 2)
+  isPercent      Boolean  @default(true)
+  minOrderAmount Decimal? @db.Decimal(10, 2) // [เพิ่ม - MEM-02: ขั้นต่ำในการใช้โปรฯ]
+  maxUses        Int?                         // [เพิ่ม - MEM-02: จำกัดจำนวนการใช้]
+  usedCount      Int      @default(0)         // [เพิ่ม - MEM-02: นับจำนวนที่ใช้ไปแล้ว]
+  startDate      DateTime
+  endDate        DateTime
+  isActive       Boolean  @default(true)
+
+  orders Order[]
 }
 
-// ==========================================
-// 4. Orders & Payments (ระบบคำสั่งซื้อและการชำระเงิน)
-// ==========================================
 model Order {
   id          String      @id @default(uuid())
-  orderNumber String      @unique 
-  customerId  String?     
-  staffId     String?     
-  promotionId String?     // [แก้ไข]: เพิ่มเพื่อเก็บไอดีโปรโมชันที่ใช้
+  orderNumber String      @unique
+  customerId  String?
+  staffId     String?
+  promotionId String?
   type        OrderType
   status      OrderStatus @default(PENDING)
   totalAmount Decimal     @db.Decimal(10, 2)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
 
-  customer    User?       @relation("CustomerOrders", fields: [customerId], references: [id])
-  staff       User?       @relation("StaffOrders", fields: [staffId], references: [id])
-  promotion   Promotion?  @relation(fields: [promotionId], references: [id]) // [แก้ไข]: รับ relation จาก Promotion
-  items       OrderItem[]
-  payment     Payment?
+  // CUS-02: วิธีรับสินค้า
+  pickupMethod    PickupMethod @default(SELF_PICKUP)
+  scheduledAt     DateTime?   // [เพิ่ม - CUS-02: ระบุเวลารับ]
+  deliveryAddress String?     // [เพิ่ม - CUS-02: ที่อยู่จัดส่ง]
+
+  // Offline Sync Metadata (PRF-01, PRF-05)
+  isOffline Boolean   @default(false)
+  syncedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer      User?          @relation("CustomerOrders", fields: [customerId], references: [id])
+  staff         User?          @relation("StaffOrders", fields: [staffId], references: [id])
+  promotion     Promotion?     @relation(fields: [promotionId], references: [id])
+  items         OrderItem[]
+  payment       Payment?
+  notifications Notification[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model OrderItem {
   id          String  @id @default(uuid())
   orderId     String
-  productId   String
+  variantId   String
   quantity    Int
-  priceAtTime Decimal @db.Decimal(10, 2) 
-  options     Json?   
+  priceAtTime Decimal @db.Decimal(10, 2)
+  options     Json?   // snapshot ของ options ที่เลือก ณ เวลาสั่ง
 
-  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product @relation(fields: [productId], references: [id])
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id])
 }
 
 model Payment {
-  id            String        @id @default(uuid())
-  orderId       String        @unique
-  method        PaymentMethod
-  status        PaymentStatus @default(PENDING)
-  amount        Decimal       @db.Decimal(10, 2)
-  referenceNo   String?       
-  qrPayload     String?       
-  paidAt        DateTime?
-  createdAt     DateTime      @default(now())
+  id          String        @id @default(uuid())
+  orderId     String        @unique
+  method      PaymentMethod
+  status      PaymentStatus @default(PENDING)
+  amount      Decimal       @db.Decimal(10, 2)
+  pointsUsed  Int?          // [เพิ่ม - PAY-01: จำนวนแต้มที่ใช้แลก]
+  referenceNo String?       // เลข reference สำหรับโอน/บัตร
+  qrPayload   String?       // QR payload สำหรับ PromptPay
+  slipUrl     String?       // [เพิ่ม - CUS-03: แนบสลิปชำระเงิน]
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
 
-  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 // ==========================================
-// 5. Audit Logs (ระบบบันทึกประวัติการทำงาน)
+// 4. Notifications (CUS-04, ORD-01, INV-02)
+// ==========================================
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  orderId   String?
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead])
+}
+
+// ==========================================
+// 5. Audit Logs
 // ==========================================
 model AuditLog {
   id        String   @id @default(uuid())
   userId    String
-  action    String   
-  entity    String?  
-  entityId  String?  
-  details   Json?    
+  action    String
+  entity    String?  // ชื่อ model เช่น "Order", "User"
+  entityId  String?  // ID ของ record ที่ถูก log
+  details   Json?
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  @@index([userId])    
-  @@index([createdAt]) 
+  @@index([userId])
+  @@index([createdAt])
+  @@index([entity, entityId])
 }
