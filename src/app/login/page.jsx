@@ -1,6 +1,42 @@
+"use client";
+
 import Header from "@/app/components/Header";
+import Link from "next/link";
+import { useState } from "react";
 
 export default function LoginPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function onSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const form = new FormData(e.currentTarget);
+      const email = String(form.get("email") ?? "");
+      const password = String(form.get("password") ?? "");
+
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        setError("เข้าสู่ระบบไม่สำเร็จ");
+        return;
+      }
+
+      window.location.href = "/";
+    } catch {
+      setError("เข้าสู่ระบบไม่สำเร็จ");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
@@ -15,7 +51,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form className="space-y-6">
+        <form className="space-y-6" onSubmit={onSubmit}>
           <div className="space-y-2">
             <label
               htmlFor="email"
@@ -26,8 +62,10 @@ export default function LoginPage() {
             <input
               id="email"
               type="email"
+              name="email"
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="you@example.com"
+              required
             />
           </div>
 
@@ -41,22 +79,31 @@ export default function LoginPage() {
             <input
               id="password"
               type="password"
+              name="password"
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="••••••••"
+              required
             />
           </div>
 
           <button
             type="submit"
+            disabled={loading}
             className="mt-4 w-full rounded-2xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            เข้าสู่ระบบ
+            {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
           </button>
         </form>
 
+          {error ? (
+            <p className="text-center text-sm text-destructive">{error}</p>
+          ) : null}
+
           <p className="text-center text-xs text-muted-foreground">
             ยังไม่มีบัญชี?{" "}
-            <span className="font-medium text-foreground">สมัครสมาชิก</span>
+            <Link href="/register" className="font-medium text-foreground underline underline-offset-4">
+              สมัครสมาชิก
+            </Link>
           </p>
         </div>
       </div>
