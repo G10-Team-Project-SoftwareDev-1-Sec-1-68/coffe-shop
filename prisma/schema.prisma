@@ -4,16 +4,5 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // ลบ url = env("DATABASE_URL") ออกแล้ว
 }
-
-model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  name         String?
-  passwordHash String
-  authToken    String?  @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-

@@ -9,11 +9,23 @@ A Next.js 15 (App Router) coffee shop project with menu and order management, au
 โปรเจกต์นี้คือ **เว็บร้านกาแฟ KAFUNG** ทำด้วย Next.js 15 มีหน้าหลัก เข้าสู่ระบบ เมนู และสั่งออเดอร์
 
 **รันโปรเจกต์ (ในโฟลเดอร์ `my-app`):**
+ระบบฐานข้อมูลของเราใช้ PostgreSQL ผ่าน Docker ดังนั้นก่อนรันโปรเจกต์ ต้องเปิด Database ก่อนเสมอครับ
+
 ```bash
+# 1. ติดตั้ง Dependencies
 pnpm install
-cp .env.example .env.local
+
+# 2. ก๊อปปี้ไฟล์ตัวแปรแวดล้อม (และตั้งค่า DATABASE_URL ตามที่ตกลงกัน)
+cp .env.example .env
+
+# 3. เปิดการทำงาน Database (PostgreSQL) ด้วย Docker แบบ Background
+docker compose up -d
+
+# 4. อัปเดตโครงสร้างตารางใน Database ให้พร้อมใช้งาน
+pnpx prisma db push
+
+# 5. รันเว็บโหมด Development
 pnpm dev
-```
 แล้วเปิดเบราว์เซอร์ที่ [http://localhost:3000](http://localhost:3000)
 
 **สิ่งที่โปรเจกต์มี:**
