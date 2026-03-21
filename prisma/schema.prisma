@@ -4,5 +4,146 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // ลบ url = env("DATABASE_URL") ออกแล้ว
+  // ลบบรรทัด url = env("DATABASE_URL") ทิ้งไปเลยครับ
+}
+
+// ==========================================
+// 1. Users & Roles (ระบบผู้ใช้งานและสิทธิ์)
+// ==========================================
+enum Role {
+  CUSTOMER  // ลูกค้าทั่วไป (ซื้อกาแฟออนไลน์)
+  STAFF     // พนักงาน (เข้าใช้ POS)
+  ADMIN     // ผู้ดูแลระบบ (เข้า Dashboard)
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // เก็บ Hash ของรหัสผ่าน
+  firstName String
+  lastName  String?
+  phone     String?  @unique
+  role      Role     @default(CUSTOMER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ความสัมพันธ์ (Relations)
+  ordersAsCustomer Order[]    @relation("CustomerOrders")
+  ordersAsStaff    Order[]    @relation("StaffOrders")
+  auditLogs        AuditLog[]
+}
+
+// ==========================================
+// 2. Audit Logs (ระบบเก็บประวัติการใช้งาน)
+// ==========================================
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String   // เช่น "LOGIN", "CREATE_ORDER", "UPDATE_MENU"
+  entity    String?  // ตารางที่เกี่ยวข้อง เช่น "Product", "Order"
+  entityId  String?  // ID ของข้อมูลที่ถูกกระทำ
+  details   Json?    // เก็บข้อมูลเพิ่มเติม เช่น { "ip": "192...", "oldValue": "..." }
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ==========================================
+// 3. Products & Menu (ข้อมูลกาแฟ/สินค้า)
+// ==========================================
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  products    Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  categoryId  String
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category   Category    @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+}
+
+// ==========================================
+// 4. Orders (ระบบคำสั่งซื้อ)
+// ==========================================
+enum OrderType {
+  ONLINE // สั่งผ่านเว็บ (ลูกค้าสั่งเอง)
+  POS    // สั่งหน้าร้าน (พนักงานคีย์)
+}
+
+enum OrderStatus {
+  PENDING    // รอดำเนินการ
+  PREPARING  // กำลังทำ
+  COMPLETED  // เสร็จสิ้น/รับของแล้ว
+  CANCELLED  // ยกเลิก
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  orderNumber String      @unique // เลขที่บิล เช่น KAF-2401001
+  customerId  String?     // Nullable เพราะลูกค้าหน้าร้านอาจจะไม่บอกชื่อ
+  staffId     String?     // Nullable เพราะสั่งออนไลน์จะไม่มีพนักงานคีย์
+  type        OrderType
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  customer User?       @relation("CustomerOrders", fields: [customerId], references: [id])
+  staff    User?       @relation("StaffOrders", fields: [staffId], references: [id])
+  items    OrderItem[]
+  payment  Payment?
+}
+
+model OrderItem {
+  id          String  @id @default(uuid())
+  orderId     String
+  productId   String
+  quantity    Int
+  priceAtTime Decimal @db.Decimal(10, 2) // เก็บราคา ณ ตอนที่ซื้อ (กันราคาเปลี่ยนในอนาคต)
+  options     Json?   // เก็บ Option เพิ่มเติม เช่น { "sweetness": "50%", "type": "Hot" }
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+// ==========================================
+// 5. Payments (ระบบการชำระเงิน)
+// ==========================================
+enum PaymentMethod {
+  CASH
+  QR_CODE
+  CREDIT_CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  orderId       String        @unique
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  amount        Decimal       @db.Decimal(10, 2)
+  referenceNo   String?       // ไว้เก็บเลขอ้างอิงโอนเงินจาก QR Code
+  qrPayload     String?       // (Optional) ไว้เก็บ Data/Text สำหรับ Gen QR ให้ลูกค้าสแกน
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }

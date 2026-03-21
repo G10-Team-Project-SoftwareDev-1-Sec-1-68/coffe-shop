@@ -27,6 +27,25 @@ pnpx prisma db push
 # 5. รันเว็บโหมด Development
 pnpm dev
 แล้วเปิดเบราว์เซอร์ที่ [http://localhost:3000](http://localhost:3000)
+```
+
+### 🐘 การจัดการฐานข้อมูล (Database Workflow)
+
+หลังจากเปิด Database ด้วย Docker (`docker compose up -d`) แล้ว เราจะใช้คำสั่ง Prisma หลักๆ 2 ตัวในการทำงานครับ:
+
+#### 1. อัปเดตโครงสร้างฐานข้อมูล (`db push`)
+ทุกครั้งที่คุณมีการ **เพิ่ม แก้ไข หรือลบ Model** ในไฟล์ `prisma/schema.prisma` คุณต้องรันคำสั่งนี้เพื่อให้ Prisma นำโครงสร้างใหม่ไปสร้างเป็นตารางใน PostgreSQL:
+
+```bash
+pnpx prisma db push
+```
+
+
+### เปิด table database 
+```bash
+pnpx prisma studio
+```
+
 
 **สิ่งที่โปรเจกต์มี:**
 - หน้าเว็บ: หน้าแรก, ล็อกอิน, เมนู, สั่งออเดอร์ (เมนูกับออเดอร์ต้องล็อกอินก่อน)
