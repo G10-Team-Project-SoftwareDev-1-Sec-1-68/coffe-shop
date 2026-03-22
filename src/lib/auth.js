@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { verifyToken } from "@/lib/jwt";
 
 /**
@@ -35,4 +36,26 @@ export function verifyJwtFromRequest(request) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Require JWT with role STAFF or ADMIN. Returns payload or an error Response.
+ * @param {Request} request
+ * @returns {{ ok: true, payload: { sub: string, email: string, role: string } } | { ok: false, response: Response }}
+ */
+export function requireStaffOrAdmin(request) {
+  const payload = verifyJwtFromRequest(request);
+  if (!payload) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+  if (payload.role !== "STAFF" && payload.role !== "ADMIN") {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+    };
+  }
+  return { ok: true, payload };
 }
