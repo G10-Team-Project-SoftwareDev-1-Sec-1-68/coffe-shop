@@ -1,19 +1,43 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
+import { signToken } from "@/lib/jwt";
 
 const RegisterSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
-  name: z.string().trim().min(1).max(100).optional(),
+  firstName: z.string().trim().min(1).max(100),
+  lastName: z.string().trim().max(100).optional().nullable(),
+  phone: z.string().trim().max(30).optional().nullable(),
 });
+
+function buildUserPayload(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+    phone: user.phone,
+    points: user.points,
+    memberTier: user.memberTier,
+    preferredLang: user.preferredLang,
+    isActive: user.isActive,
+    createdAt: user.createdAt,
+  };
+}
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const parsed = RegisterSchema.safeParse(body);
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
+    const parsed = RegisterSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid input", details: parsed.error.flatten() },
@@ -21,27 +45,59 @@ export async function POST(request) {
       );
     }
 
-    const email = parsed.data.email.toLowerCase();
-    const { password, name } = parsed.data;
+    const email = parsed.data.email.toLowerCase().trim();
+    const { password, firstName, lastName, phone } = parsed.data;
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return NextResponse.json(
-        { error: "Email already in use" },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "Email already in use" }, { status: 400 });
+    }
+
+    if (phone) {
+      const phoneTaken = await prisma.user.findUnique({
+        where: { phone },
+      });
+      if (phoneTaken) {
+        return NextResponse.json({ error: "Phone already in use" }, { status: 400 });
+      }
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const authToken = crypto.randomUUID();
 
     const user = await prisma.user.create({
-      data: { email, name: name ?? null, passwordHash, authToken },
-      select: { id: true, email: true, name: true, createdAt: true },
+      data: {
+        email,
+        password: passwordHash,
+        firstName,
+        lastName: lastName ?? null,
+        phone: phone ?? null,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        phone: true,
+        points: true,
+        memberTier: true,
+        preferredLang: true,
+        isActive: true,
+        createdAt: true,
+      },
     });
 
-    const res = NextResponse.json({ user }, { status: 201 });
-    res.cookies.set("auth-token", authToken, {
+    const token = signToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    const res = NextResponse.json(
+      { token, user: buildUserPayload(user) },
+      { status: 201 }
+    );
+    res.cookies.set("auth-token", token, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
@@ -50,10 +106,15 @@ export async function POST(request) {
     });
     return res;
   } catch (error) {
+    if (error?.code === "P2002") {
+      return NextResponse.json(
+        { error: "Email or phone already in use" },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: error.message ?? "Failed to register" },
       { status: 500 }
     );
   }
 }
-

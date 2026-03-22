@@ -1,16 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "@/app/api/auth/register/route";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
-// mock bcryptjs
+vi.mock("@/lib/jwt", () => ({
+  signToken: vi.fn().mockReturnValue("mock-jwt-token"),
+}));
+
 vi.mock("bcryptjs", () => ({
   default: {
     hash: vi.fn().mockResolvedValue("hashed-password"),
   },
 }));
 
-// mock prisma client
-vi.mock("@/lib/db", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: {
       findUnique: vi.fn(),
@@ -38,7 +40,7 @@ describe("POST /api/auth/register", () => {
     expect(data.error).toBe("Invalid input");
   });
 
-  it("returns 409 when email already exists", async () => {
+  it("returns 400 when email already exists", async () => {
     prisma.user.findUnique.mockResolvedValue({ id: "u1", email: "test@example.com" });
 
     const req = new Request("http://localhost/api/auth/register", {
@@ -47,12 +49,12 @@ describe("POST /api/auth/register", () => {
       body: JSON.stringify({
         email: "test@example.com",
         password: "password123",
-        name: "Existing User",
+        firstName: "Existing",
       }),
     });
 
     const res = await POST(req);
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toBe("Email already in use");
   });
@@ -62,7 +64,14 @@ describe("POST /api/auth/register", () => {
     prisma.user.create.mockResolvedValue({
       id: "u1",
       email: "new@example.com",
-      name: "New User",
+      firstName: "New",
+      lastName: "User",
+      role: "CUSTOMER",
+      phone: null,
+      points: 0,
+      memberTier: "BRONZE",
+      preferredLang: "th",
+      isActive: true,
       createdAt: new Date(),
     });
 
@@ -72,7 +81,8 @@ describe("POST /api/auth/register", () => {
       body: JSON.stringify({
         email: "new@example.com",
         password: "password123",
-        name: "New User",
+        firstName: "New",
+        lastName: "User",
       }),
     });
 
@@ -80,8 +90,8 @@ describe("POST /api/auth/register", () => {
     expect(res.status).toBe(201);
     const data = await res.json();
     expect(data).toHaveProperty("user");
+    expect(data).toHaveProperty("token");
     expect(data.user.email).toBe("new@example.com");
     expect(prisma.user.create).toHaveBeenCalled();
   });
 });
-
