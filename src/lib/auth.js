@@ -59,3 +59,19 @@ export function requireStaffOrAdmin(request) {
   }
   return { ok: true, payload };
 }
+
+/**
+ * Require any valid JWT (CUSTOMER, STAFF, or ADMIN).
+ * @param {Request} request
+ * @returns {{ ok: true, payload: { sub: string, email: string, role: string } } | { ok: false, response: Response }}
+ */
+export function requireAuth(request) {
+  const payload = verifyJwtFromRequest(request);
+  if (!payload) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+  return { ok: true, payload };
+}
