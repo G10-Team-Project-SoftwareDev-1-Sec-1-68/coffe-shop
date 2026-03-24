@@ -56,7 +56,7 @@ export default function RegisterPage() {
       const redirectMap = {
         CUSTOMER: "/order",
         STAFF: "/pos",
-        ADMIN: "/dashboard",
+        ADMIN: "/admin",
       };
       sessionStorage.setItem("toast", JSON.stringify({ message: `ยินดีต้อนรับสู่ KAFUNG, ${name}! ☕`, type: "success" }));
       window.location.href = redirectMap[role] ?? "/";

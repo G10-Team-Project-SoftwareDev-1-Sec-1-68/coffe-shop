@@ -38,7 +38,7 @@ export default function LoginPage() {
       const redirectMap = {
         CUSTOMER: "/order",
         STAFF: "/pos",
-        ADMIN: "/dashboard",
+        ADMIN: "/admin",
       };
       // ส่ง toast message ข้ามหน้าผ่าน sessionStorage
       sessionStorage.setItem("toast", JSON.stringify({ message: `ยินดีต้อนรับกลับมา, ${name}! 👋`, type: "success" }));

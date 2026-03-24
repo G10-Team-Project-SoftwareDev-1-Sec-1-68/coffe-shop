@@ -25,6 +25,7 @@ export default async function DashboardLayout({ children }) {
     { name: 'Stock', path: '/admin/stock', icon: '📦' },
     { name: 'Order', path: '/admin/order', icon: '🧾' },
     { name: 'Member', path: '/admin/member', icon: '👥' },
+    { name: 'Logs', path: '/admin/log', icon: '📋' },
   ];
 
   return (

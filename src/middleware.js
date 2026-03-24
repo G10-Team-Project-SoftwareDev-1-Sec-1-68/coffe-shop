@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 const ROLE_HOME = {
   CUSTOMER: "/order",
   STAFF: "/pos",
-  ADMIN: "/dashboard",
+  ADMIN: "/admin",
 };
 
 /**
@@ -17,7 +17,7 @@ const ROLE_HOME = {
 const PATH_ROLES = {
   "/order": ["CUSTOMER"],
   "/pos": ["STAFF"],
-  "/dashboard": ["ADMIN"],
+  "/admin": ["ADMIN"],
   "/menu": ["CUSTOMER", "STAFF", "ADMIN"],
 };
 
@@ -94,7 +94,7 @@ export const config = {
     "/register",
     "/order/:path*",
     "/pos/:path*",
-    "/dashboard/:path*",
+    "/admin/:path*",
     "/menu/:path*",
   ],
 };
