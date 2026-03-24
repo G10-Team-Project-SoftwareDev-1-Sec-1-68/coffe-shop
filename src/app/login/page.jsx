@@ -1,12 +1,14 @@
 "use client";
 
 import Header from "@/app/components/Header";
+import Toast from "@/app/components/Toast";
 import Link from "next/link";
 import { useState } from "react";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -24,12 +26,23 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        setError("เข้าสู่ระบบไม่สำเร็จ");
+        setError(data?.error ?? "เข้าสู่ระบบไม่สำเร็จ");
         return;
       }
 
-      window.location.href = "/";
+      const role = data?.user?.role;
+      const name = data?.user?.firstName ?? "คุณ";
+      const redirectMap = {
+        CUSTOMER: "/order",
+        STAFF: "/pos",
+        ADMIN: "/dashboard",
+      };
+      // ส่ง toast message ข้ามหน้าผ่าน sessionStorage
+      sessionStorage.setItem("toast", JSON.stringify({ message: `ยินดีต้อนรับกลับมา, ${name}! 👋`, type: "success" }));
+      window.location.href = redirectMap[role] ?? "/";
     } catch {
       setError("เข้าสู่ระบบไม่สำเร็จ");
     } finally {
@@ -40,6 +53,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
+      {toast && (
+        <Toast message={toast} type="success" onClose={() => setToast("")} />
+      )}
       <div className="flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-md rounded-2xl bg-card shadow-lg border border-border px-8 py-10 space-y-8">
           <div className="space-y-2 text-center">
