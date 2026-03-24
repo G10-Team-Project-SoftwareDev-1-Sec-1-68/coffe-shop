@@ -88,12 +88,16 @@ export default function Header() {
           ) : user ? (
             // Logged-in: แสดงชื่อ + logout
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/50 px-3 py-1.5">
+              <Link
+                href="/member"
+                className="flex items-center gap-2 rounded-xl border border-border bg-muted/50 px-3 py-1.5 transition hover:bg-muted"
+                aria-label="ไปหน้า Member"
+              >
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-foreground max-w-[120px] truncate">
                   {displayName}
                 </span>
-              </div>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
