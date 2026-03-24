@@ -2,12 +2,16 @@
 import Image from "next/image";
 import { Plus } from "lucide-react";
 
-export default function MenuCard({ item }) {
+export default function MenuCard({ item, onClick }) {
   return (
-    <div className="flex items-center gap-5 w-full max-w-4xl mx-auto mb-4 p-5 rounded-[2.5rem] bg-[var(--card)] border border-border/40 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] cursor-pointer group">
+    <div 
+      onClick={onClick}
+      // ปรับ padding ให้กระชับขึ้นเล็กน้อย (p-4 instead of p-5)
+      className="flex items-center gap-4 w-full max-w-4xl mx-auto mb-3 p-4 rounded-[2rem] bg-white border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-lg active:scale-[0.98] cursor-pointer group"
+    >
       
-      {/* 1. รูปภาพสินค้า (Compact Size 100x100) */}
-      <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-3xl overflow-hidden flex-shrink-0 shadow-inner bg-[#F5F5F5]">
+      {/* 1. รูปภาพสินค้า: ปรับขนาดลง (Compact Size) */}
+      <div className="relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-[#F5F5F5] shadow-inner">
         <Image 
           src={item.image} 
           alt={item.nameEn || item.nameTh} 
@@ -17,27 +21,37 @@ export default function MenuCard({ item }) {
         />
       </div>
       
-      {/* 2. รายละเอียดตรงกลาง */}
-      <div className="flex-grow flex flex-col justify-center overflow-hidden">
-        {/* ชื่อเมนู: ขนมโชว์ไทย / กาแฟโชว์อังกฤษ */}
-        <h3 className="text-xl md:text-2xl font-bold text-[var(--coffee-dark)] mb-1 truncate tracking-tight uppercase italic">
+      {/* 2. รายละเอียดตรงกลาง (ส่วนที่ปรับขนาดใหม่ให้เล็กลงทั้งคู่) */}
+      <div className="flex-grow flex flex-col justify-center overflow-hidden pl-1">
+        
+        {/* ☕ ชื่อเมนู: ปรับลดขนาดลง (จาก 2xl เหลือ xl/lg) ให้ดูคลีน มินิมอล */}
+        <h3 className="text-[#4A3427] font-black text-lg md:text-xl leading-tight mb-1 truncate uppercase italic">
           {item.type === "bakery" ? item.nameTh : item.nameEn}
         </h3>
         
-        <p className="text-muted-foreground text-sm md:text-base leading-snug line-clamp-1 italic">
+        {/* คำอธิบายสั้นๆ: ปรับขนาดตัวอักษรลง */}
+        <p className="text-muted-foreground text-[10px] md:text-xs leading-snug line-clamp-1 italic mb-2 opacity-70">
           {item.descTh}
         </p>
         
-        {/* ราคาพรีเมียมสี Tan Brown */}
-        <div className="flex items-center gap-1.5 mt-2">
-           <span className="text-[#B87C4C] font-black text-lg">฿</span>
-           <span className="text-[#B87C4C] font-black text-2xl tracking-tighter">{item.price}</span>
+        {/* ฿ ราคา: ปรับลดขนาดลง (จาก 2xl เหลือ base/lg) ให้ดูพอดีตามสั่งครับ */}
+        <div className="flex items-baseline gap-1 text-[#B87C4C]">
+           <span className="font-bold text-xs mb-[1px]">฿</span>
+           <span className="font-black text-base md:text-lg tracking-tighter leading-none">
+             {item.price}
+           </span>
         </div>
       </div>
 
-      {/* 3. ปุ่มกดเพิ่ม (เครื่องหมายบวก) */}
-      <button className="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 bg-white rounded-full flex items-center justify-center shadow-md text-coffee-dark border border-border/20 transition-all hover:bg-[var(--primary)] hover:text-white hover:scale-110 active:scale-90">
-        <Plus size={28} strokeWidth={3} />
+      {/* 3. ปุ่มกดเพิ่ม (เครื่องหมายบวก): ปรับขนาดลงเล็กน้อยให้เข้ากับ Component */}
+      <button 
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        className="flex-shrink-0 w-10 h-10 md:w-11 md:h-11 bg-[#F5F5F5] rounded-full flex items-center justify-center shadow-md text-coffee-dark border border-gray-100 transition-all hover:bg-coffee-gold hover:text-white hover:scale-110 active:scale-90"
+      >
+        <Plus size={22} strokeWidth={3.5} />
       </button>
       
     </div>

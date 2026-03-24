@@ -10,23 +10,24 @@ const navLinks = [
   { href: "#reviews", label: "Reviews" },
 ];
 
-export default function Header() {
+// 🟢 เพิ่ม { basketCount = 0 } เข้ามาใน Props
+export default function Header({ basketCount = 0 }) {
   return (
-    <header className="w-full border-b border-border bg-background text-foreground">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md text-foreground">
       <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6 lg:px-8">
         {/* Logo — โลโก้เดิม KAFUNG coffee bar */}
         <Link href="/" className="flex items-center gap-3">
           <div
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-coffee-gold text-primary"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-coffee-gold text-white"
             aria-hidden
           >
             <span className="text-xl">☕</span>
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-xl font-semibold tracking-wide text-foreground">
+            <span className="text-xl font-black tracking-wide text-foreground italic uppercase">
               KAFUNG
             </span>
-            <span className="text-xs text-muted-foreground -mt-0.5">
+            <span className="text-[10px] font-bold text-coffee-gold italic -mt-0.5 uppercase">
               coffee bar
             </span>
           </div>
@@ -38,7 +39,7 @@ export default function Header() {
             <Link
               key={href}
               href={href}
-              className="text-sm font-medium text-foreground transition hover:text-primary"
+              className="text-sm font-bold text-foreground/70 transition hover:text-coffee-gold uppercase italic"
             >
               {label}
             </Link>
@@ -52,18 +53,27 @@ export default function Header() {
             className="rounded-full p-2 text-foreground transition hover:bg-muted"
             aria-label="ค้นหา"
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-5 w-5" strokeWidth={2.5} />
           </button>
+          
+          {/* 🟢 ส่วนรถเข็น: เพิ่มตัวเลขแจ้งเตือนสีแดง */}
           <Link
             href="/order"
-            className="rounded-full p-2 text-foreground transition hover:bg-muted"
+            className="relative rounded-full p-2 text-foreground transition hover:bg-muted"
             aria-label="ตะกร้า"
           >
-            <ShoppingCart className="h-5 w-5" />
+            <ShoppingCart className="h-5 w-5" strokeWidth={2.5} />
+            {/* แสดงเลขสีแดงเมื่อมีของในตะกร้า */}
+            {basketCount > 0 && (
+              <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white animate-bounce shadow-sm">
+                {basketCount}
+              </span>
+            )}
           </Link>
+
           <Link
             href="/register"
-            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90"
+            className="rounded-full bg-coffee-dark px-6 py-2.5 text-sm font-black text-white shadow-md transition hover:bg-coffee-gold uppercase italic"
           >
             สมัครสมาชิก
           </Link>
