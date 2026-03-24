@@ -83,7 +83,8 @@ export async function POST(request) {
         throw err;
       }
 
-      const isCash = method === "CASH";
+      // In POS, if staff creates payment, they have verified it
+      const isCompleted = method === "CASH" || method === "QR_CODE";
       const now = new Date();
 
       const created = await tx.payment.create({
@@ -92,12 +93,12 @@ export async function POST(request) {
           method,
           amount: String(order.totalAmount),
           pointsUsed: pointsUsed ?? null,
-          status: isCash ? "COMPLETED" : "PENDING",
-          paidAt: isCash ? now : null,
+          status: isCompleted ? "COMPLETED" : "PENDING",
+          paidAt: isCompleted ? now : null,
         },
       });
 
-      if (isCash && order.status === "PENDING") {
+      if (isCompleted && order.status === "PENDING") {
         await tx.order.update({
           where: { id: orderId },
           data: { status: "PREPARING" },
