@@ -1,9 +1,10 @@
 "use client";
 import * as React from "react";
 import { Coffee, CupSoda, Snowflake, CakeSlice, Candy, Home, ClipboardList, UserCircle } from "lucide-react";
+import Link from "next/link"; // 🟢 เพิ่ม Link สำหรับเชื่อมโยงหน้า
 import Header from "../components/Header"; 
 import MenuCard from "./MenuCard"; 
-import PromoBanner from "./PromoBanner"; // Import ส่วนโปรโมชั่นที่แยกออกมา
+import PromoBanner from "./PromoBanner"; 
 
 const KAFUNG_DATA = [
   { id: 1, nameEn: "Hot Espresso", descTh: "เอสเพรสโซ่ร้อน เข้มข้น หอมกรุ่นต้นตำรับ", price: 65, type: "hot", image: "/menu-images/hot-espresso.png" },
@@ -43,15 +44,11 @@ export default function KafungMenuPage() {
     <div className="min-h-screen bg-[var(--background)] pb-40 relative selection:bg-coffee-gold/30">
       <Header />
       
-      {/* 🟢 ปรับลด pt-48 เป็น pt-32 เพื่อเขยิบ Banner ขึ้นไปด้านบน */}
       <main className="max-w-[1200px] mx-auto pt-32 px-10">
-        
-        {/* ส่วนโปรโมชั่น: ลดระยะห่างด้านล่างจาก mb-16 เป็น mb-10 */}
         <div className="mb-10">
           <PromoBanner />
         </div>
 
-        {/* Tab หมวดหมู่: ปรับ mb-16 เป็น mb-8 เพื่อให้รายการอาหารขึ้นมาเร็วขึ้น */}
         <div className="flex justify-center gap-5 mb-8 overflow-x-auto py-4 no-scrollbar">
           <CategoryTab label="ร้อน" icon={Coffee} active={activeTab === "hot"} onClick={() => setActiveTab("hot")} />
           <CategoryTab label="เย็น" icon={CupSoda} active={activeTab === "iced"} onClick={() => setActiveTab("iced")} />
@@ -60,7 +57,6 @@ export default function KafungMenuPage() {
           <CategoryTab label="อื่นๆ" icon={Candy} active={activeTab === "others"} onClick={() => setActiveTab("others")} />
         </div>
 
-        {/* รายการเมนู */}
         <div className="space-y-1 pb-32">
           {filteredData.length > 0 ? (
             filteredData.map((item) => <MenuCard key={item.id} item={item} />)
@@ -70,12 +66,27 @@ export default function KafungMenuPage() {
         </div>
       </main>
 
-      {/* Floating Bottom Nav */}
+      {/* --- 🧭 Floating Bottom Nav --- */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-xl z-50 px-4">
         <div className="bg-coffee-dark/95 backdrop-blur-xl h-20 rounded-[2.5rem] shadow-2xl flex items-center justify-around px-10 border border-white/10 text-white">
-          <button className="flex flex-col items-center gap-1 text-coffee-gold transition-all"><Home size={28} strokeWidth={2.5} /><span className="text-xs font-bold uppercase tracking-tighter">หน้าหลัก</span></button>
-          <button className="flex flex-col items-center gap-1 opacity-50 hover:opacity-100 transition-all"><ClipboardList size={28} /><span className="text-xs font-bold uppercase tracking-tighter">คำสั่งซื้อ</span></button>
-          <button className="flex flex-col items-center gap-1 opacity-50 hover:opacity-100 transition-all"><UserCircle size={28} /><span className="text-xs font-bold uppercase tracking-tighter">โปรไฟล์</span></button>
+          
+          {/* ปุ่มหน้าหลัก (Active) */}
+          <button className="flex flex-col items-center gap-1 text-coffee-gold transition-all">
+            <Home size={28} strokeWidth={2.5} />
+            <span className="text-xs font-bold uppercase tracking-tighter">หน้าหลัก</span>
+          </button>
+
+          {/* 🟢 ปุ่มคำสั่งซื้อ: กดแล้วเด้งไปหน้า /orders */}
+          <Link href="/orders" className="flex flex-col items-center gap-1 opacity-50 hover:opacity-100 hover:text-coffee-gold transition-all">
+            <ClipboardList size={28} />
+            <span className="text-xs font-bold uppercase tracking-tighter">คำสั่งซื้อ</span>
+          </Link>
+
+          {/* ปุ่มโปรไฟล์ */}
+          <button className="flex flex-col items-center gap-1 opacity-50 hover:opacity-100 transition-all">
+            <UserCircle size={28} />
+            <span className="text-xs font-bold uppercase tracking-tighter">โปรไฟล์</span>
+          </button>
         </div>
       </div>
 
