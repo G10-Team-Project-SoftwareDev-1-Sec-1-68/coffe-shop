@@ -49,7 +49,7 @@ export async function PATCH(request, context) {
     const order = await prisma.$transaction(
       async (tx) => {
         await tx.$executeRaw`
-          SELECT id FROM "Order" WHERE id = ${orderId}::uuid FOR UPDATE
+          SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE
         `;
 
         const existing = await tx.order.findUnique({

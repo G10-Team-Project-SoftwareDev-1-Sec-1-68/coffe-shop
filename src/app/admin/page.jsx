@@ -3,12 +3,18 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
+} from 'recharts';
 
 export default function AdminDashboardPage() {
   const [kpiData, setKpiData] = useState({
     totalSales: "0",
     totalOrders: 0,
     lowStockItems: 0,
+    chartData: [],
+    topProducts: [],
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,14 +36,17 @@ export default function AdminDashboardPage() {
           totalSales: data.totalSales,
           totalOrders: data.totalOrders,
           lowStockItems: data.lowStockItems,
+          chartData: data.chartData || [],
+          topProducts: data.topProducts || [],
         });
       } catch (err) {
         setError(err.message);
-        setKpiData({
-          totalSales: "15400", // ใส่ข้อมูลจำลองให้ดูสวยๆ เวลามี Error
-          totalOrders: 82,
-          lowStockItems: 4,
-        });
+        setKpiData(prev => ({
+          ...prev,
+          totalSales: "0",
+          totalOrders: 0,
+          lowStockItems: 0,
+        }));
       } finally {
         setIsLoading(false);
       }
@@ -49,17 +58,6 @@ export default function AdminDashboardPage() {
   if (isLoading) {
     return <div className="p-8 text-center text-gray-500 font-bold">กำลังโหลดข้อมูล... ⏳</div>;
   }
-
-  // ข้อมูลจำลองสำหรับวาดกราฟ
-  const mockChartData = [
-    { day: 'จ.', value: 0, label: '0' },
-    { day: 'อ.', value: 0, label: '0' },
-    { day: 'พ.', value: 0, label: '0' },
-    { day: 'พฤ.', value: 0, label: '0' },
-    { day: 'ศ.', value: 0, label: '0' },
-    { day: 'ส.', value: 0, label: '0' },
-    { day: 'อา.', value: 0, label: '0' },
-  ];
 
   return (
     <div className="space-y-6 pb-8">
@@ -104,38 +102,73 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ---------------- 2. ส่วนกราฟยอดขาย  ---------------- */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h3 className="text-lg font-bold text-[#3D2A1E]">ยอดขายย้อนหลัง 7 วัน</h3>
-            <p className="text-sm text-gray-500 mt-1">เปรียบเทียบยอดขายในแต่ละวัน</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        
+        {/* Bar Chart - 7 Days */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition-shadow">
+          <div className="mb-6 flex justify-between items-start">
+            <div>
+              <h3 className="text-lg font-bold text-[#3D2A1E]">ยอดขายย้อนหลัง 7 วัน</h3>
+              <p className="text-sm text-gray-500 mt-1">เปรียบเทียบยอดขายในแต่ละวัน</p>
+            </div>
           </div>
-          <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-[#9B8446] bg-gray-50 cursor-pointer">
-            <option>สัปดาห์นี้</option>
-            <option>สัปดาห์ที่แล้ว</option>
-          </select>
+          <div className="h-72 w-full mt-auto">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={kpiData.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
+                <RechartsTooltip 
+                  cursor={{ fill: '#F5F5F5' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+                  formatter={(value) => [`฿${Number(value).toLocaleString()}`, 'ยอดขาย']}
+                />
+                <Bar dataKey="value" fill="#9B8446" radius={[6, 6, 0, 0]} maxBarSize={45} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* ตัวกราฟแท่ง (Bar Chart) */}
-        <div className="h-64 flex items-end justify-between gap-2 sm:gap-6 pt-4 border-b border-gray-100 pb-2 px-2">
-          {mockChartData.map((item, index) => (
-            <div key={index} className="flex flex-col items-center flex-1 group h-full justify-end">
-              {/* ตัวเลขที่จะโผล่มาตอนเอาเมาส์ชี้ (Hover) */}
-              <span className="text-xs font-bold text-[#9B8446] mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                {item.label}
-              </span>
-              
-              {/* แท่งกราฟ */}
-              <div 
-                className="w-full max-w-[40px] bg-[#FDEEEE] group-hover:bg-[#9B8446] rounded-t-lg transition-all duration-500 relative cursor-pointer"
-                style={{ height: `${item.value}%` }}
-              ></div>
-              
-              {/* ป้ายชื่อวันด้านล่าง */}
-              <span className="text-sm font-medium text-gray-500 mt-3">{item.day}</span>
-            </div>
-          ))}
+        {/* Pie Chart - Top Products Today */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition-shadow">
+          <div className="mb-2">
+            <h3 className="text-lg font-bold text-[#3D2A1E]">เมนูขายดีวันนี้</h3>
+            <p className="text-sm text-gray-500 mt-1">สัดส่วนยอดขายแยกรุ่น (Hover ดูรายละเอียด)</p>
+          </div>
+          <div className="h-72 w-full flex items-center justify-center mt-auto">
+            {kpiData.topProducts.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={kpiData.topProducts}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={3}
+                    dataKey="revenue"
+                    nameKey="name"
+                  >
+                    {kpiData.topProducts.map((entry, index) => {
+                      const COLORS = ['#9B8446', '#BCA871', '#D6C79A', '#E8DEBD', '#4A5D32', '#6B874B', '#8FA971', '#A3B49B'];
+                      return <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />;
+                    })}
+                  </Pie>
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+                    formatter={(value, name, props) => [`฿${Number(value).toLocaleString()} (${props.payload.quantity} แก้ว)`, name]}
+                  />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-gray-400">
+                <span className="text-4xl mb-2">☕️</span>
+                <p className="font-medium">ยังไม่มีข้อมูลยอดขายวันนี้</p>
+              </div>
+            )}
+          </div>
         </div>
+
       </div>
 
     </div>

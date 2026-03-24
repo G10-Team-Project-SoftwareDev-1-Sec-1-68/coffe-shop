@@ -50,7 +50,7 @@ export async function PATCH(request, context) {
     const result = await prisma.$transaction(
       async (tx) => {
         await tx.$executeRaw`
-          SELECT id FROM "Payment" WHERE id = ${paymentId}::uuid FOR UPDATE
+          SELECT id FROM "Payment" WHERE id = ${paymentId} FOR UPDATE
         `;
 
         const payment = await tx.payment.findUnique({

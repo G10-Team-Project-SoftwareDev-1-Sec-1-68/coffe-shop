@@ -14,6 +14,7 @@ export default function AdminStockPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAdjustModal, setShowAdjustModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [defaultAction, setDefaultAction] = useState("RESTOCK");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchStock = async () => {
@@ -182,15 +183,15 @@ export default function AdminStockPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">ประเภทการทำรายการ</label>
                 <div className="grid grid-cols-2 gap-2">
                   <label className="border border-gray-200 rounded-lg p-2 text-sm text-center cursor-pointer hover:bg-green-50 focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500">
-                    <input type="radio" name="type" value="RESTOCK" defaultChecked className="sr-only" />
+                    <input type="radio" name="type" value="RESTOCK" defaultChecked={defaultAction === "RESTOCK"} className="sr-only" />
                     <span className="font-bold text-green-700">+ เติมสต็อก</span>
                   </label>
                   <label className="border border-gray-200 rounded-lg p-2 text-sm text-center cursor-pointer hover:bg-red-50 focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500">
-                    <input type="radio" name="type" value="WASTE" className="sr-only" />
+                    <input type="radio" name="type" value="WASTE" defaultChecked={defaultAction === "WASTE"} className="sr-only" />
                     <span className="font-bold text-red-700">- ทิ้งของเสีย</span>
                   </label>
                   <label className="col-span-2 border border-gray-200 rounded-lg p-2 text-sm text-center cursor-pointer hover:bg-blue-50 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
-                    <input type="radio" name="type" value="ADJUSTMENT" className="sr-only" />
+                    <input type="radio" name="type" value="ADJUSTMENT" defaultChecked={defaultAction === "ADJUSTMENT"} className="sr-only" />
                     <span className="font-bold text-blue-700">ปรับสมดุล (ระบุ + หรือ - ได้)</span>
                   </label>
                 </div>
@@ -269,12 +270,20 @@ export default function AdminStockPage() {
                     <td className="px-6 py-4 text-center text-sm text-gray-500"><span className="bg-gray-100 px-2 py-1 rounded-md">{item.unit}</span></td>
                     <td className="px-6 py-4 text-center"><span className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${status.color}`}>{status.label}</span></td>
                     <td className="px-6 py-4 text-center">
-                      <button 
-                        onClick={() => { setSelectedItem(item); setShowAdjustModal(true); }}
-                        className="text-[#5F7840] hover:bg-green-50 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-transparent hover:border-green-200"
-                      >
-                        ปรับสต็อก
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => { setSelectedItem(item); setDefaultAction("RESTOCK"); setShowAdjustModal(true); }}
+                          className="bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                        >
+                          ➕ เติมของ
+                        </button>
+                        <button 
+                          onClick={() => { setSelectedItem(item); setDefaultAction("ADJUSTMENT"); setShowAdjustModal(true); }}
+                          className="text-gray-500 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors border border-transparent hover:border-gray-200"
+                        >
+                          ⚙️ ปรับ/ทิ้ง
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

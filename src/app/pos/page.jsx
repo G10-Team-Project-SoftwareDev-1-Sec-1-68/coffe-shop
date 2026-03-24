@@ -59,6 +59,7 @@ function OrderTicket({ order, active, onClick }) {
 // ============================================================
 
 export default function POSOrderSystem() {
+  const [activeTab, setActiveTab] = useState("PENDING");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -73,12 +74,11 @@ export default function POSOrderSystem() {
   const PROMPTPAY_ID = "0628295556";
   const TEST_MOCK_1_BAHT = true; // เปิดโหมดทดสอบ จ่าย 1 บาท
 
-  // Fetch PENDING orders
+  // Fetch orders based on active tab
   const fetchOrders = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      // ดึงออเดอร์เฉพาะที่ PENDING (รับเข้าใหม่)
-      const res = await fetch("/api/orders?status=PENDING", { credentials: "include" });
+      const res = await fetch(`/api/orders?status=${activeTab}`, { credentials: "include" });
       if (!res.ok) throw new Error("โหลดข้อมูลทิคเก็ตไม่สำเร็จ");
       const data = await res.json();
       setOrders(data.orders || []);
@@ -97,12 +97,10 @@ export default function POSOrderSystem() {
   };
 
   useEffect(() => {
-    // Initial fetch
     fetchOrders();
-    // Auto-refresh every 10 seconds to get new tickets
     const interval = setInterval(() => fetchOrders(true), 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeTab]);
 
   const handleCheckoutClick = () => {
     if (!selectedOrder) return;
@@ -130,7 +128,25 @@ export default function POSOrderSystem() {
         throw new Error(errorData.error || "สร้างรายการชำระเงินไม่สำเร็จ");
       }
 
-      // 2. Update Order Status to COMPLETED (triggers stock deduction)
+      setToast({ message: `รับชำระเงินออเดอร์ ${selectedOrder.orderNumber} สำเร็จ ✅ ไปที่แท็บกำลังชง`, type: "success" });
+      setShowQR(false);
+      
+      // ลบออกจากคิวพรีดิ้งหน้านี้
+      setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
+      setSelectedOrder(null);
+    } catch (error) {
+      setToast({ message: error.message, type: "error" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleServeOrder = async () => {
+    if (!selectedOrder) return;
+    setIsSubmitting(true);
+    
+    try {
+      // เปลี่ยนสถานะออเดอร์ไปที่ COMPLETED ซึ่งจะไป trigger การตัดสต็อก
       const resStatus = await fetch(`/api/orders/${selectedOrder.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -139,11 +155,10 @@ export default function POSOrderSystem() {
 
       if (!resStatus.ok) {
         const errorData = await resStatus.json();
-        throw new Error(errorData.error || "เปลี่ยนสถานะออเดอร์ไม่สำเร็จ (ไม่สามารถตัดสต็อกได้)");
+        throw new Error(errorData.error || "เสิร์ฟออเดอร์ไม่สำเร็จ (ไม่สามารถตัดสต็อกได้)");
       }
 
-      setToast({ message: `รับชำระเงินออเดอร์ ${selectedOrder.orderNumber} สำเร็จ ✅`, type: "success" });
-      setShowQR(false);
+      setToast({ message: `เสิร์ฟออเดอร์ ${selectedOrder.orderNumber} เรียบร้อย ☕️ สต็อกถูกหักแล้ว`, type: "success" });
       
       // ลบออกจากคิวหน้าจอ
       setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
@@ -265,22 +280,39 @@ export default function POSOrderSystem() {
       {/* Main Content Split */}
       <div className="flex flex-1 overflow-hidden relative">
         
-        {/* ================= LEFT: TICKETS QUEUE ================= */}
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <Receipt className="w-6 h-6 text-amber-700" />
-              คิวออเดอร์ใหม่ 
-              <span className="bg-amber-100 text-amber-800 text-base px-2 py-0.5 rounded-full ml-2">
-                {orders.length}
-              </span>
-            </h2>
-            <button 
-              onClick={() => fetchOrders()}
-              className="text-sm text-gray-500 hover:text-amber-700 transition-colors"
-            >
-              รีเฟรชข้อมูล
-            </button>
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <Receipt className="w-6 h-6 text-amber-700" />
+                คิวออเดอร์ 
+                <span className="bg-amber-100 text-amber-800 text-base px-2 py-0.5 rounded-full ml-2">
+                  {orders.length}
+                </span>
+              </h2>
+              <button 
+                onClick={() => fetchOrders()}
+                className="text-sm text-gray-500 hover:text-amber-700 transition-colors"
+              >
+                รีเฟรชข้อมูล
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex bg-gray-200 p-1 rounded-xl">
+              <button 
+                onClick={() => { setActiveTab("PENDING"); setSelectedOrder(null); }}
+                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === "PENDING" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                1. รอยืนยันรับเงิน
+              </button>
+              <button 
+                onClick={() => { setActiveTab("PREPARING"); setSelectedOrder(null); }}
+                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === "PREPARING" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                2. บาร์น้ำ (กำลังชง)
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -403,7 +435,7 @@ export default function POSOrderSystem() {
                 )}
               </div>
 
-              {/* Checkout Footer */}
+              {/* Checkout or Serve Footer */}
               <div className="p-6 border-t border-gray-100 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
                 <div className="flex justify-between items-end mb-6">
                   <span className="text-gray-500 font-medium">รวมสุทธิ</span>
@@ -412,13 +444,24 @@ export default function POSOrderSystem() {
                   </span>
                 </div>
                 
-                <button
-                  onClick={handleCheckoutClick}
-                  className="w-full py-4 rounded-2xl bg-gray-900 text-white font-bold text-lg shadow-xl shadow-gray-900/20 hover:bg-black active:scale-95 transition-all flex items-center justify-center gap-3"
-                >
-                  <QrCode className="w-6 h-6" />
-                  ชำระเงิน (สแกน QR)
-                </button>
+                {activeTab === "PENDING" ? (
+                  <button
+                    onClick={handleCheckoutClick}
+                    className="w-full py-4 rounded-2xl bg-gray-900 text-white font-bold text-lg shadow-xl shadow-gray-900/20 hover:bg-black active:scale-95 transition-all flex items-center justify-center gap-3"
+                  >
+                    <QrCode className="w-6 h-6" />
+                    ชำระเงิน
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleServeOrder}
+                    disabled={isSubmitting}
+                    className="w-full py-4 rounded-2xl bg-amber-700 text-white font-bold text-lg shadow-xl shadow-amber-700/20 hover:bg-amber-800 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                  >
+                    <Coffee className="w-6 h-6" />
+                    {isSubmitting ? "กำลังเสิร์ฟ..." : "เสิร์ฟแล้ว (ตัดสต็อก)"}
+                  </button>
+                )}
               </div>
             </>
           )}
