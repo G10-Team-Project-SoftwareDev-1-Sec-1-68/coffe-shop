@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { ShoppingCart, Search } from "lucide-react";
+// 🟢 1. Import cartStore เข้ามาเพื่อดูจำนวนของในตะกร้าแบบ Real-time
+import { useCartStore } from "../store/cartStore";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -10,11 +12,14 @@ const navLinks = [
   { href: "#reviews", label: "Reviews" },
 ];
 
-// 🟢 เพิ่ม { basketCount = 0 } เข้ามาใน Props
-export default function Header({ basketCount = 0 }) {
+export default function Header() {
+  // 🟢 2. ดึงจำนวนชิ้นรวม (totalItems) จาก Store มาใช้
+  const totalItems = useCartStore((state) => state.getTotalItems)();
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md text-foreground">
       <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6 lg:px-8">
+        
         {/* Logo — โลโก้เดิม KAFUNG coffee bar */}
         <Link href="/" className="flex items-center gap-3">
           <div
@@ -56,17 +61,18 @@ export default function Header({ basketCount = 0 }) {
             <Search className="h-5 w-5" strokeWidth={2.5} />
           </button>
           
-          {/* 🟢 ส่วนรถเข็น: เพิ่มตัวเลขแจ้งเตือนสีแดง */}
+          {/* 🟢 ส่วนรถเข็น: เชื่อมลิงก์ไปหน้า /cart และแสดงเลขแจ้งเตือน */}
           <Link
-            href="/order"
+            href="/cart"
             className="relative rounded-full p-2 text-foreground transition hover:bg-muted"
             aria-label="ตะกร้า"
           >
             <ShoppingCart className="h-5 w-5" strokeWidth={2.5} />
-            {/* แสดงเลขสีแดงเมื่อมีของในตะกร้า */}
-            {basketCount > 0 && (
+            
+            {/* 🟢 แสดงเลขสีแดงแบบ Real-time เมื่อมีการกดเพิ่มรายการจากหน้าหลัก */}
+            {totalItems > 0 && (
               <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white animate-bounce shadow-sm">
-                {basketCount}
+                {totalItems}
               </span>
             )}
           </Link>
