@@ -1,90 +1,80 @@
 "use client";
-
+import * as React from "react";
 import Link from "next/link";
-import { ShoppingCart, Search } from "lucide-react";
-// 🟢 1. Import cartStore เข้ามาเพื่อดูจำนวนของในตะกร้าแบบ Real-time
+import { Search, ShoppingCart } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "#services", label: "Services" },
-  { href: "/menu", label: "Menu" },
-  { href: "#reviews", label: "Reviews" },
-];
-
 export default function Header() {
-  // 🟢 2. ดึงจำนวนชิ้นรวม (totalItems) จาก Store มาใช้
-  const totalItems = useCartStore((state) => state.getTotalItems)();
+  // 🟢 ดึงจำนวนของในตะกร้ามาโชว์ที่ไอคอน
+  const { cartItems } = useCartStore();
+  const basketCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md text-foreground">
-      <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6 lg:px-8">
+    <header className="fixed top-0 left-0 right-0 z-[100] bg-[#FDF8F1]/80 backdrop-blur-md border-b border-[#E5D5C6]/30">
+      <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
         
-        {/* Logo — โลโก้เดิม KAFUNG coffee bar */}
-        <Link href="/" className="flex items-center gap-3">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-coffee-gold text-white"
-            aria-hidden
-          >
-            <span className="text-xl">☕</span>
+        {/* 1. Logo Section (KAFUNG COFFEE BAR) */}
+        <Link href="/menu-2" className="flex items-center gap-3 group">
+          <div className="w-14 h-14 bg-[#B87C4C] rounded-full flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform duration-300">
+             {/* ใส่รูปโลโก้จริงของเนมตรงนี้นะครับ */}
+             <span className="text-2xl text-white">☕</span>
           </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-xl font-black tracking-wide text-foreground italic uppercase">
+          <div className="flex flex-col">
+            <h1 className="text-[#3D2B1F] font-black italic text-2xl leading-none tracking-tighter uppercase">
               KAFUNG
-            </span>
-            <span className="text-[10px] font-bold text-coffee-gold italic -mt-0.5 uppercase">
-              coffee bar
+            </h1>
+            <span className="text-[#B87C4C] font-bold italic text-[10px] uppercase tracking-widest mt-0.5">
+              COFFEE BAR
             </span>
           </div>
         </Link>
 
-        {/* Nav */}
-        <nav className="hidden items-center gap-8 md:flex" aria-label="หลัก">
-          {navLinks.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className="text-sm font-bold text-foreground/70 transition hover:text-coffee-gold uppercase italic"
+        {/* 2. Navigation Menu (ตรงกลาง) */}
+        <nav className="hidden md:flex items-center gap-10">
+          {["HOME", "SERVICES", "MENU", "REVIEWS"].map((item) => (
+            <Link 
+              key={item} 
+              href={item === "MENU" ? "/menu-2" : "#"} 
+              className="text-[#6B5E55] font-black italic text-sm tracking-widest hover:text-[#B87C4C] transition-colors"
             >
-              {label}
+              {item}
             </Link>
           ))}
         </nav>
 
-        {/* Right: search, cart, signup */}
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            className="rounded-full p-2 text-foreground transition hover:bg-muted"
-            aria-label="ค้นหา"
-          >
-            <Search className="h-5 w-5" strokeWidth={2.5} />
-          </button>
+        {/* 3. Action Buttons (Search, Cart, Sign Up) */}
+        <div className="flex items-center gap-6">
           
-          {/* 🟢 ส่วนรถเข็น: เชื่อมลิงก์ไปหน้า /cart และแสดงเลขแจ้งเตือน */}
-          <Link
-            href="/cart"
-            className="relative rounded-full p-2 text-foreground transition hover:bg-muted"
-            aria-label="ตะกร้า"
-          >
-            <ShoppingCart className="h-5 w-5" strokeWidth={2.5} />
-            
-            {/* 🟢 แสดงเลขสีแดงแบบ Real-time เมื่อมีการกดเพิ่มรายการจากหน้าหลัก */}
-            {totalItems > 0 && (
-              <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white animate-bounce shadow-sm">
-                {totalItems}
+          {/* ปุ่มค้นหา */}
+          <button className="text-[#3D2B1F] hover:text-[#B87C4C] transition-colors">
+            <Search size={24} strokeWidth={2.5} />
+          </button>
+
+          {/* ปุ่มตะกร้า (มีตัวเลขแจ้งเตือน) */}
+          <Link href="/cart" className="relative text-[#3D2B1F] hover:text-[#B87C4C] transition-colors">
+            <ShoppingCart size={24} strokeWidth={2.5} />
+            {basketCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-bounce">
+                {basketCount}
               </span>
             )}
           </Link>
 
-          <Link
-            href="/register"
-            className="rounded-full bg-coffee-dark px-6 py-2.5 text-sm font-black text-white shadow-md transition hover:bg-coffee-gold uppercase italic"
+          {/* ปุ่มสมัครสมาชิก (ดีไซน์ตามรูปเป๊ะ) */}
+          <Link 
+            href="/register" 
+            className="bg-[#3D2B1F] text-[#FDF8F1] px-8 py-3 rounded-full font-black italic text-sm tracking-tighter hover:bg-[#2D1B11] transition-all shadow-xl active:scale-95"
           >
             สมัครสมาชิก
           </Link>
+
         </div>
       </div>
+
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@700&display=swap');
+        header * { font-family: 'Playpen Sans', cursive !important; }
+      `}</style>
     </header>
   );
 }
