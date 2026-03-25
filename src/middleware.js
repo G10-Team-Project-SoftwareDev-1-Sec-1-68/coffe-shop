@@ -5,17 +5,18 @@ import { NextResponse } from "next/server";
  * เปลี่ยนตรงนี้ที่เดียวถ้าต้องการเพิ่ม role ใหม่
  */
 const ROLE_HOME = {
-  CUSTOMER: "/order",
+  CUSTOMER: "/menu",
   STAFF: "/pos",
   ADMIN: "/admin",
 };
 
 /**
  * กำหนดว่า path ไหนอนุญาต role อะไรบ้าง
- * ใช้ startsWith — ดังนั้น "/order" ครอบคลุม "/order/anything" ด้วย
+ * ใช้ startsWith — ดังนั้น "/orders" ครอบคลุม "/orders/anything" ด้วย
  */
 const PATH_ROLES = {
-  "/order": ["CUSTOMER"],
+  "/orders": ["CUSTOMER"],
+  "/cart": ["CUSTOMER"],
   "/pos": ["STAFF"],
   "/admin": ["ADMIN"],
   "/menu": ["CUSTOMER", "STAFF", "ADMIN"],
@@ -92,9 +93,15 @@ export const config = {
   matcher: [
     "/login",
     "/register",
-    "/order/:path*",
+    "/orders/:path*",
+    "/orders",
     "/pos/:path*",
+    "/pos",
     "/admin/:path*",
+    "/admin",
     "/menu/:path*",
+    "/menu",
+    "/cart/:path*",
+    "/cart",
   ],
 };

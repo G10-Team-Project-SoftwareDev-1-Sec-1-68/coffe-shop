@@ -7,6 +7,8 @@ import Header from "../components/Header";
 import { useCartStore } from "../store/cartStore";
 import useSWR from "swr";
 
+import PromoBanner from "./PromoBanner";
+
 const fetcher = (url) => fetch(url).then(res => res.json());
 
 function getCategoryIcon(name) {
@@ -119,6 +121,12 @@ export default function PosStyleMenuPage() {
 
         {/* Right Content - Products */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-50/50 pb-32">
+          
+          {/* PromoBanner restored at the top! */}
+          <div className="mb-8">
+            <PromoBanner />
+          </div>
+
           {isLoading ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="bg-white h-48 rounded-2xl border border-gray-100 animate-pulse" />)}
@@ -180,7 +188,7 @@ export default function PosStyleMenuPage() {
       {/* POS-Style Order Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh]">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-y-auto md:overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh]">
             
             {/* Left side info */}
             <div className="w-full md:w-2/5 bg-gray-50 border-r border-gray-100 p-6 flex flex-col shrink-0">
@@ -206,12 +214,12 @@ export default function PosStyleMenuPage() {
             </div>
 
             {/* Right side options */}
-            <div className="w-full md:w-3/5 flex flex-col h-full max-h-[50vh] md:max-h-none overflow-hidden">
-               <div className="hidden md:flex justify-end p-4 pb-0 opacity-50 hover:opacity-100">
+            <div className="w-full md:w-3/5 flex flex-col min-h-[50vh] min-h-0">
+               <div className="hidden md:flex justify-end p-4 pb-0 opacity-50 hover:opacity-100 shrink-0">
                   <button onClick={() => setSelectedProduct(null)} className="text-gray-400 hover:text-gray-900 transition-colors"><XCircle size={28}/></button>
                </div>
                
-               <div className="flex-1 overflow-y-auto p-6 md:pt-4">
+               <div className="flex-1 overflow-y-auto p-6 md:pt-4 no-scrollbar">
                  {/* Variants */}
                  <div className="mb-8">
                    <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider mb-3">รูปแบบ / ขนาด</h3>
@@ -240,7 +248,7 @@ export default function PosStyleMenuPage() {
                  {selectedProduct.options && selectedProduct.options.length > 0 && (
                    <div>
                      <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider mb-3">ท็อปปิ้งเพิ่มเติม</h3>
-                     <div className="flex flex-col gap-2">
+                     <div className="flex flex-col gap-2 pb-6">
                        {selectedProduct.options.map(o => (
                          <button
                            key={o.id}
@@ -273,7 +281,7 @@ export default function PosStyleMenuPage() {
                </div>
 
                {/* Footer / Confirm */}
-               <div className="p-6 border-t border-gray-100 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
+               <div className="p-6 border-t border-gray-100 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)] shrink-0">
                  <button
                    onClick={handleConfirmOrder}
                    disabled={!selectedVariant}

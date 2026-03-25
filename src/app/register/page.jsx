@@ -54,7 +54,7 @@ export default function RegisterPage() {
       const role = data?.user?.role;
       const name = data?.user?.firstName ?? firstName;
       const redirectMap = {
-        CUSTOMER: "/order",
+        CUSTOMER: "/menu",
         STAFF: "/pos",
         ADMIN: "/admin",
       };
