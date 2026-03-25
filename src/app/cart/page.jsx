@@ -1,112 +1,142 @@
 "use client";
 import * as React from "react";
-import { Minus, Plus, Trash2, Check } from "lucide-react";
+import { Minus, Plus, Check } from "lucide-react";
 import { useRouter } from "next/navigation"; 
-import Link from "next/link";
 import Header from "../components/Header"; 
+import Toast from "../components/Toast";
 import { useCartStore } from "../store/cartStore";
 
 export default function CartPage() {
   const router = useRouter();
   const { cartItems, getTotalPrice, updateQuantity, clearCart } = useCartStore();
   
-  const [paymentMethod, setPaymentMethod] = React.useState('qr'); 
+  const [paymentMethod, setPaymentMethod] = React.useState('QR_CODE'); 
   const [usePoints, setUsePoints] = React.useState(false); 
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [toast, setToast] = React.useState({ message: "", type: "success" });
 
   const subtotal = getTotalPrice();
   const total = Math.max(0, subtotal - (usePoints ? 50 : 0));
 
-  // 🚀 ฟังก์ชันยืนยันการสั่งซื้อแบบส่งข้อมูลผ่าน URL
-  const handleConfirmOrder = () => {
+  const handleConfirmOrder = async () => {
     if (cartItems.length === 0) return;
+    setIsSubmitting(true);
 
-    // 1. เตรียมข้อมูลรายการ (เช่น "Iced Cocoa, Espresso")
-    const itemNames = cartItems.map(item => item.nameEn || item.nameTh).join(", ");
-    
-    // 2. เตรียมวันที่และเวลาปัจจุบัน
-    const now = new Date();
-    const options = { day: '2-digit', month: 'short', year: 'numeric' };
-    const dateStr = now.toLocaleDateString('th-TH', options);
-    const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false });
+    try {
+      // 1. Prepare items payload for API
+      const orderItems = cartItems.map(item => ({
+        variantId: item.variant.id,
+        quantity: item.quantity,
+        priceAtTime: item.price,
+        options: { display: item.selectedOptions } // Save customization text
+      }));
 
-    // 3. ล้างตะกร้า
-    clearCart();
+      // 2. Call API to create order
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "ONLINE",
+          totalAmount: total,
+          items: orderItems,
+          pickupMethod: "SELF_PICKUP"
+        })
+      });
 
-    // 4. วาร์ปไปหน้า Orders พร้อมส่งข้อมูลไปทาง URL
-    const query = new URLSearchParams({
-      items: itemNames,
-      date: dateStr,
-      time: timeStr,
-      total: total.toFixed(2)
-    }).toString();
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "ไม่สามารถสร้างคำสั่งซื้อได้");
+      }
 
-    router.push(`/orders?${query}`);
+      // 3. Clear cart and redirect
+      clearCart();
+      router.push(`/orders`);
+      
+    } catch (error) {
+      setToast({ message: error.message, type: "error" });
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#C49A83]">
+    <div className="min-h-screen bg-[#FDF8F1] pb-24">
       <Header />
-      <main className="max-w-5xl mx-auto pt-32 pb-20 px-6 space-y-6">
-        <div className="bg-white rounded-full px-10 py-3 flex justify-between items-center shadow-lg">
-          <span className="font-bold italic text-[#4A3427] text-xl uppercase tracking-tighter">ตะกร้าสินค้า</span>
-          <button onClick={() => { if(confirm("ลบทั้งหมด?")) clearCart() }} className="text-[#B87C4C] text-xs font-bold italic uppercase hover:text-red-500 transition-all">
-            ลบทั้งหมด
-          </button>
+      {toast.message && (
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: "", type: "success" })} />
+      )}
+      <main className="max-w-3xl mx-auto pt-32 px-6 space-y-6">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-black italic text-[#3D2B1F] tracking-tighter uppercase">ตะกร้าสินค้า</h1>
+          {cartItems.length > 0 && (
+            <button onClick={() => { if(confirm("ลบทั้งหมด?")) clearCart() }} className="text-[#B87C4C] text-sm font-bold bg-[#B87C4C]/10 px-4 py-2 rounded-full uppercase hover:bg-red-50 hover:text-red-500 transition-all">
+              ลบทั้งหมด
+            </button>
+          )}
         </div>
 
         {/* รายการสินค้า */}
         <div className="space-y-4">
           {cartItems.length > 0 ? cartItems.map((item) => (
-            <div key={item.uniqueId} className="bg-white rounded-[2.5rem] p-6 flex gap-6 items-center shadow-xl border border-white/20">
-              <div className="w-24 h-24 rounded-3xl overflow-hidden bg-[#F5F5F5] flex-shrink-0">
-                <img src={item.image} alt="product" className="w-full h-full object-cover" />
+            <div key={item.uniqueId} className="bg-white rounded-3xl p-4 flex gap-4 items-center shadow-sm border border-[#E5D5C6]/50">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden bg-[#F5F5F5] flex-shrink-0 relative">
+                <img src={item.product?.image || item.image || "/menu-images/hot-espresso.png"} alt="product" className="object-cover w-full h-full" />
               </div>
-              <div className="flex-1 flex flex-col justify-between h-24">
-                <h3 className="text-[#4A3427] font-bold italic text-2xl uppercase tracking-tighter">{item.nameEn || item.nameTh}</h3>
-                <div className="flex justify-between items-center">
-                  <span className="text-[#B38E3F] font-bold italic text-2xl">฿ {(item.price * item.quantity).toFixed(2)}</span>
-                  <div className="bg-[#F1F3F4] rounded-full flex items-center gap-4 px-4 py-2">
-                    <button onClick={() => updateQuantity(item.uniqueId, item.quantity - 1)}><Minus size={16} strokeWidth={3} /></button>
-                    <span className="font-bold text-lg">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.uniqueId, item.quantity + 1)}><Plus size={16} strokeWidth={3} /></button>
+              <div className="flex-1 flex flex-col justify-center">
+                <h3 className="text-[#3D2B1F] font-black italic text-lg leading-tight uppercase truncate">
+                  {item.product?.name || item.nameEn || item.nameTh}
+                </h3>
+                <p className="text-gray-400 text-[10px] font-bold mb-2 truncate">
+                  {item.selectedOptions}
+                </p>
+                <div className="flex justify-between items-end">
+                  <span className="text-[#B87C4C] font-black italic text-lg leading-none mt-1">฿ {Number(item.price * item.quantity).toFixed(0)}</span>
+                  <div className="bg-[#FDF8F1] border border-[#E5D5C6]/50 rounded-full flex items-center gap-3 px-3 py-1.5 shrink-0 shadow-inner">
+                    <button onClick={() => updateQuantity(item.uniqueId, item.quantity - 1)} className="text-[#B87C4C]"><Minus size={14} strokeWidth={4} /></button>
+                    <span className="font-black text-sm w-4 text-center text-[#3D2B1F]">{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.uniqueId, item.quantity + 1)} className="text-[#B87C4C]"><Plus size={14} strokeWidth={4} /></button>
                   </div>
                 </div>
               </div>
             </div>
           )) : (
-            <div className="bg-white/10 rounded-[2.5rem] py-20 text-center border-2 border-dashed border-white/20 text-white italic font-bold">ไม่มีสินค้าในตะกร้า</div>
+            <div className="bg-white rounded-3xl py-16 text-center border border-dashed border-[#E5D5C6] shadow-sm">
+               <span className="text-gray-400 italic font-bold">ไม่มีรายการสินค้าในตะกร้า</span>
+            </div>
           )}
         </div>
 
-        {/* ส่วนแต้ม */}
-        <button onClick={() => setUsePoints(!usePoints)} className={`w-full bg-white rounded-[2rem] p-6 flex justify-between items-center shadow-xl border-l-[15px] transition-all ${usePoints ? "border-[#B38E3F]" : "border-gray-200"}`}>
-          <div className="flex flex-col items-start"><span className="font-bold italic text-lg text-[#4A3427]">ใช้ 50 แต้มแลกส่วนลด</span><span className="text-xs text-gray-400 font-bold italic">คุณเนม มี 50 แต้ม</span></div>
-          <div className={`w-8 h-8 rounded-full border-4 flex items-center justify-center ${usePoints ? "border-[#B38E3F] bg-[#B38E3F]" : "border-gray-100 bg-gray-50"}`}>{usePoints && <Check size={18} className="text-white" strokeWidth={4} />}</div>
-        </button>
+        {cartItems.length > 0 && (
+          <>
+            {/* ส่วนการจ่ายเงิน (Mockup UI Info) */}
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-[#E5D5C6]/50 space-y-4">
+              <h3 className="text-[#3D2B1F] font-black italic uppercase">วิธีการชำระเงิน</h3>
+              <p className="text-sm text-gray-500 font-medium">คุณสามารถสแกน QR Code ชำระเงินได้ที่แท็บคำสั่งซื้อ หลังจากกดปุ่มยืนยัน</p>
+              <div className="bg-[#FDF8F1] w-full rounded-2xl p-4 flex justify-between items-center border border-[#B87C4C]">
+                <div className="text-left font-black italic text-[#B87C4C]">Thai QR PromptPay</div>
+                <div className="w-5 h-5 bg-[#B87C4C] rounded-full flex items-center justify-center"><Check size={12} className="text-white" strokeWidth={4} /></div>
+              </div>
+            </div>
 
-        {/* ส่วนการจ่ายเงิน */}
-        <div className="space-y-3">
-          <h3 className="text-white font-black italic text-lg uppercase px-4">วิธีการชำระเงิน</h3>
-          {['qr', 'card', 'counter'].map((id) => (
-            <button key={id} onClick={() => setPaymentMethod(id)} className={`bg-white w-full rounded-[1.5rem] p-5 flex justify-between items-center shadow-md border-4 transition-all ${paymentMethod === id ? "border-[#B38E3F]" : "border-transparent opacity-80"}`}>
-              <div className="text-left font-black italic text-[#4A3427]">{id === 'qr' ? 'Thai QR Payment' : id === 'card' ? 'บัตรเครดิต / เดบิต' : 'ชำระที่เคาน์เตอร์'}</div>
-              {paymentMethod === id && <div className="w-6 h-6 bg-[#B38E3F] rounded-full flex items-center justify-center"><Check size={14} className="text-white" strokeWidth={4} /></div>}
-            </button>
-          ))}
-        </div>
-
-        {/* ยอดรวม */}
-        <div className="px-6 py-8 text-white border-t border-white/20 mt-10">
-          <div className="flex justify-between text-4xl font-bold italic tracking-tighter"><span>ยอดสุทธิ</span><span>฿ {total.toFixed(2)}</span></div>
-        </div>
-
-        <button onClick={handleConfirmOrder} disabled={cartItems.length === 0} className="w-full bg-[#332C26] text-white py-6 rounded-[2.5rem] font-bold italic text-2xl shadow-2xl active:scale-[0.97] disabled:opacity-50">
-          ยืนยันคำสั่งซื้อ
-        </button>
+            {/* ยอดรวม */}
+            <div className="bg-[#3D2B1F] rounded-[2.5rem] p-6 shadow-2xl mt-8">
+              <div className="flex justify-between items-center text-white mb-6 px-2">
+                <span className="font-bold text-lg">ยอดสุทธิ</span>
+                <span className="text-3xl font-black italic tracking-tighter">฿ {total.toFixed(0)}</span>
+              </div>
+              <button 
+                onClick={handleConfirmOrder} 
+                disabled={isSubmitting} 
+                className="w-full bg-[#B87C4C] text-white py-5 rounded-full font-black italic text-xl shadow-lg active:scale-[0.98] disabled:opacity-50 transition-all uppercase tracking-wide border border-white/20"
+              >
+                {isSubmitting ? "กำลังดำเนินการ..." : "ยืนยันคำสั่งซื้อ"}
+              </button>
+            </div>
+          </>
+        )}
       </main>
 
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@700&display=swap');
         * { font-family: 'Playpen Sans', cursive !important; }
       `}</style>
     </div>

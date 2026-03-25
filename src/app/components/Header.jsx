@@ -33,7 +33,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
         
         {/* 1. Logo Section (KAFUNG COFFEE BAR) */}
-        <Link href="/menu-2" className="flex items-center gap-3 group">
+        <Link href="/" className="flex items-center gap-3 group">
           <div className="w-14 h-14 bg-[#B87C4C] rounded-full flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform duration-300">
              {/* ใส่รูปโลโก้จริงของเนมตรงนี้นะครับ */}
              <span className="text-2xl text-white">☕</span>
@@ -50,13 +50,13 @@ export default function Header() {
 
         {/* 2. Navigation Menu (ตรงกลาง) */}
         <nav className="hidden md:flex items-center gap-10">
-          {["HOME", "SERVICES", "MENU", "REVIEWS"].map((item) => (
+          {[{label: "HOME", href: "/"}, {label: "SERVICES", href: "/#services"}, {label: "MENU", href: "/menu"}, {label: "REVIEWS", href: "/#reviews"}].map(({label, href}) => (
             <Link 
-              key={item} 
-              href={item === "MENU" ? "/menu-2" : "#"} 
+              key={label} 
+              href={href} 
               className="text-[#6B5E55] font-black italic text-sm tracking-widest hover:text-[#B87C4C] transition-colors"
             >
-              {item}
+              {label}
             </Link>
           ))}
         </nav>
