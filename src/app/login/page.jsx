@@ -36,7 +36,7 @@ export default function LoginPage() {
       const role = data?.user?.role;
       const name = data?.user?.firstName ?? "คุณ";
       const redirectMap = {
-        CUSTOMER: "/order",
+        CUSTOMER: "/menu",
         STAFF: "/pos",
         ADMIN: "/admin",
       };

@@ -134,11 +134,39 @@ export async function POST(request) {
       const variantIds = [...new Set(items.map((i) => i.variantId))];
       const variants = await tx.productVariant.findMany({
         where: { id: { in: variantIds } },
+        include: { recipes: true }
       });
       if (variants.length !== variantIds.length) {
         throw Object.assign(new Error("One or more variants not found"), {
           code: "VARIANT_NOT_FOUND",
         });
+      }
+
+      // Check ingredient stock
+      const requiredInventory = {};
+      for (const item of items) {
+        const variant = variants.find(v => v.id === item.variantId);
+        if (variant && variant.recipes) {
+          for (const rec of variant.recipes) {
+            const amountNeeded = rec.quantity * item.quantity;
+            requiredInventory[rec.ingredientId] = (requiredInventory[rec.ingredientId] || 0) + amountNeeded;
+          }
+        }
+      }
+      
+      const ingredientIds = Object.keys(requiredInventory);
+      if (ingredientIds.length > 0) {
+        const ingredients = await tx.ingredient.findMany({
+          where: { id: { in: ingredientIds } }
+        });
+        
+        for (const ing of ingredients) {
+          if (ing.stockQty < requiredInventory[ing.id]) {
+            throw Object.assign(new Error(`วัตถุดิบ ${ing.name} ไม่เพียงพอ`), {
+              code: "INSUFFICIENT_STOCK",
+            });
+          }
+        }
       }
 
       const order = await tx.order.create({
