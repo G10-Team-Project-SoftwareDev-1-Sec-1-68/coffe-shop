@@ -74,6 +74,9 @@ export default function POSOrderSystem() {
   const PROMPTPAY_ID = "0628295556";
   const TEST_MOCK_1_BAHT = true; // เปิดโหมดทดสอบ จ่าย 1 บาท
 
+  // ยอดที่ใช้ใน QR และส่ง API ต้องตรงกันเสมอ
+  const paymentAmount = TEST_MOCK_1_BAHT ? 1 : parseFloat(selectedOrder?.totalAmount ?? 0);
+
   // Fetch orders based on active tab
   const fetchOrders = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -119,7 +122,7 @@ export default function POSOrderSystem() {
         body: JSON.stringify({
           orderId: selectedOrder.id,
           method: paymentMethod,
-          amount: parseFloat(selectedOrder.totalAmount)
+          amount: paymentAmount
         })
       });
       
@@ -219,7 +222,7 @@ export default function POSOrderSystem() {
                   <div className="w-48 h-48 bg-white rounded-2xl flex items-center justify-center border-4 border-blue-50 mb-6 relative shadow-sm">
                     {/* Real PromptPay QR */}
                     <QRCodeCanvas 
-                      value={generatePayload(PROMPTPAY_ID, { amount: TEST_MOCK_1_BAHT ? 1 : parseFloat(selectedOrder.totalAmount) })}
+                      value={generatePayload(PROMPTPAY_ID, { amount: paymentAmount })}
                       size={160}
                       level={"L"}
                       includeMargin={false}
