@@ -1,5 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+// 🟢 1. Import Header เข้ามาใช้งาน
+import Header from "./components/Header";; 
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,9 +22,15 @@ export default function RootLayout({ children }) {
   return (
     <html lang="th">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#FDF8F1]`}
       >
-        {children}
+        {/* 🟢 2. วาง Header ไว้ตรงนี้ เพื่อให้ปรากฏในทุกหน้าของเว็บไซต์ */}
+        <Header />
+
+        {/* 🟢 3. ใส่ Padding Top (pt-24) เพื่อไม่ให้เนื้อหาในแต่ละหน้าโดน Header บัง */}
+        <div className="pt-24">
+          {children}
+        </div>
       </body>
     </html>
   );
