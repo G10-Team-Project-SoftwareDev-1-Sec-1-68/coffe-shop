@@ -3,13 +3,67 @@
 > ระบบจัดการร้านกาแฟและออเดอร์ออนไลน์ครบวงจร สร้างด้วย Next.js 15 App Router  
 > พร้อมระบบ Pricing Engine, Offline POS Sync, BOM Inventory และ Interactive API Docs
 
+## 🚀 อัปเดตล่าสุด (Phase: Kitchen & Dashboard)
+
+**ฟีเจอร์ที่เพิ่งพัฒนาเสร็จ:**
+1. **Kitchen Screen (POS บาร์น้ำ):** 
+   - แบ่งหน้าจอ `/pos` เป็น 2 แท็บ คือ `1. รอยืนยันรับเงิน` (PENDING) และ `2. บาร์น้ำ (กำลังชง)` (PREPARING)
+   - Flow ใหม่: ลูกค้าจ่ายเงิน -> ออเดอร์ย้ายไปแท็บบาร์น้ำ -> บาริสต้ากด "เสิร์ฟแล้ว" -> ออเดอร์เปลี่ยนเป็น COMPLETED และ **ตัดสต็อกวัตถุดิบ (BOM Deduction) ทันที** ป้องกันของหมดแบบไม่รู้ตัว
+2. **Payment Flow:** 
+   - รองรับ "เงินสด" และ "สแกน QR" (PromptPay) แบบเปิด Modal ซ้อนทับในหน้าจอ POS
+   - แก้บัก Z-index การซ้อนทับของ Modal และ Toast ให้สมบูรณ์แบบ
+3. **Admin Dashboard Charts:** 
+   - ติดตั้ง `recharts` สร้างกราฟ Interactive ดึงข้อมูลจริงจาก `/api/dashboard/summary`
+   - มี **กราฟแท่ง (Bar Chart)** ยอดขาย 7 วันย้อนหลัง และ **กราฟวงกลม (Pie Chart)** สัดส่วนยอดขายเมนูขายดีประจำวัน (Hover ดูแก้วและยอดรวมได้)
+4. **Admin Stock Quick Restock:** 
+   - เพิ่มปุ่ม "➕ เติมของ" แยกออกมาในตารางหน้า `/admin/stock` เพื่อให้แอดมินกดเติมสต็อกรายวันได้รวดเร็วทันใจ
+5. **Developer APIs (ตัวช่วยเทส):**
+   - มี `/api/dev/mock-order` (สร้างออเดอร์จำลองรัวๆ) และ `/api/dev/add-stock` (เติมสต็อกรวดเร็ว) ช่วยให้ Dev ใหม่ทดสอบได้ง่ายขึ้นโดยไม่ต้องมานั่งกดเองตั้งแต่ต้น
+   - *หมายเหตุ: แก้บักข้อมูล UUID (`text = uuid`) ใน raw query Prisma ทิ้งไปแล้ว หมดปัญหา Database Sync.*
+
+---
+
+## 🛠️ Guide สำหรับ Dev ใหม่ที่มารับช่วงต่อ (Developer Handoff)
+
+ถ้าคุณมารับช่วงต่อโปรเจกต์นี้และยัง **"ไม่มีความรู้เกี่ยวกับระบบเดิมเลย"** ให้ทำตามสเตปนี้เพื่อให้เข้าใจเร็วที่สุด:
+
+### 1. เข้าใจสถาปัตยกรรมหลัก (Core Architecture)
+- **Framework:** Next.js 15 (App Router) ไม่มี TypeScript (เป็น `.js` / `.jsx` ทั้งหมด)
+- **Database:** PostgreSQL ทำงานร่วมกับ **Prisma ORM** (ห้ามใช้ Supabase หรือเครื่องมืออื่น)
+- **State & Data Fetching:** ส่วนใหญ่ใช้ `fetch` ยิงตรงเข้า Route Handler (`/api/...`) แบบฝั่ง Client (`useEffect`, `useState`) 
+
+### 2. ลำดับการทำงาน (Flow) ของระบบที่สำคัญที่สุด
+**A. Flow ออเดอร์และตัดสต็อก (หัวใจของระบบ):**
+1. หน้า `/pos` (หรือหน้าลูกค้า `/order` ในอนาคต) ยิง `POST /api/orders` รหัสจะขึ้นต้นด้วย `TKT-...` (สถานะ `PENDING`)
+2. พนักงานรับเงิน ยิง `POST /api/payments` -> ระบบจะเปลี่ยนสถานะเป็น `PREPARING` ข้อมูลจะไปเด้งหน้าแท็บ "บาร์น้ำ (กำลังชง)"
+3. บาริสต้าทำคิวเสร็จ กด "เสิร์ฟแล้ว" ยิง `PATCH /api/orders/:id/status` พร้อมตั้งเป็น `COMPLETED`
+4. ⚠️ **ระบบจะทำการ "ตัดสต็อก" (Inventory Deduction) ในขั้นตอนนี้เท่านั้น!** โดยอิงจากสูตร (BOM - Recipe) ผูกผ่าน API `PATCH` และบล็อกอยู่ใน Prisma Transaction
+
+**B. Flow การเพิ่ม/ลดสต็อก:**
+- วัตถุดิบแต่ละประเภทมี "สูตร" ชง (เช่น Latte 1 แก้ว ใช้กาแฟ 18g, นม 120ml) ผูกกันที่ Object `Recipe`
+- แอดมินจัดการผ่าน `/admin/stock` มีโมดอลปรับสต็อก 3 แบบ: เติม (RESTOCK), ทิ้ง (WASTE), ปรับสมดุล (ADJUSTMENT)
+
+### 3. API ที่ Dev ใหม่ควรรู้จักก่อนเพื่อน
+หากต้องการทำความเข้าใจหลังบ้าน แนะนำให้อ่านไฟล์เหล่านี้:
+- `src/app/api/orders/route.js`: รับสร้างออเดอร์ใหม่ สร้าง Transaction ในบิลเดียว
+- `src/app/api/orders/[id]/status/route.js`: จุดจัดการสถานะและ **จุดตัดสต็อกจาก BOM (สำคัญมาก!)** ตรงนี้มี logic เชื่อม inventory เยอะ
+- `src/app/api/dashboard/summary/route.js`: ดึงข้อมูลทำ Data Visualization ในหน้า Admin คิวรี่จัดกลุ่มวัน/เมนู
+- **เดฟทูล:** `/api/dev/mock-order` และ `/api/dev/add-stock` (สร้างคำสั่งซื้อสุ่มและเติมของง่ายเวลาขึ้นโปรเจกต์ใหม่)
+
+### 4. การรันโปรเจกต์ขึ้นมาเพื่อทำต่อ
+1. ก๊อปปี้ไฟล์ `.env.example` ไปเป็น `.env` และตั้ง `DATABASE_URL` ไปที่ฐานข้อมูล 
+2. รัน `docker compose up -d` เพื่อเปิดฐานข้อมูล Postgres ในคอนเทนเนอร์
+3. ป้อนคำสั่ง `pnpx prisma db push` เพื่อดันโครงสร้างตาราง (Schema) ไปใส่ DB แบบรวดเร็ว
+4. อัปเดต package ด้วย `pnpm install` และรันด้วย `pnpm dev` เข้าทำงานที่ `http://localhost:3000` ทันที
+
 ---
 
 ## สารบัญ (Table of Contents)
 
 | หัวข้อ | ลิงก์ |
 |--------|--------|
-| แนะนำโปรเจกต์ | [แนะนำโปรเจกต์](#แนะนำโปรเจกต์) |
+| ยินดีต้อนรับ / ฟีเจอร์ล่าสุด | [Phase: Kitchen & Dashboard](#-อัปเดตล่าสุด-phase-kitchen--dashboard) |
+| Onboarding & คู่มือ Dev ใหม่ | [Guide สำหรับ Dev ใหม่](#-guide-สำหรับ-dev-ใหม่ที่มารับช่วงต่อ-developer-handoff) |
 | Tech Stack | [Tech Stack](#tech-stack) |
 | Getting Started / Installation | [Getting Started](#getting-started) |
 | การรัน Database ด้วย Docker | [Database Setup](#database-setup-docker--prisma) |
