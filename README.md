@@ -1,4 +1,7 @@
 # ☕ KAFUNG Coffee Bar
+ 
+> [!IMPORTANT]
+> **🚀 เจอปัญหารันโปรเจกต์ไม่ได้?** อ่าน [คู่มือแก้ไขปัญหาเบื้องต้น (Troubleshooting Guide)](./TROUBLESHOOTING.md)
 
 > ระบบจัดการร้านกาแฟและออเดอร์ออนไลน์ครบวงจร สร้างด้วย Next.js 15 App Router  
 > พร้อมระบบ Pricing Engine, Offline POS Sync, BOM Inventory และ Interactive API Docs
@@ -20,6 +23,31 @@
 5. **Developer APIs (ตัวช่วยเทส):**
    - มี `/api/dev/mock-order` (สร้างออเดอร์จำลองรัวๆ) และ `/api/dev/add-stock` (เติมสต็อกรวดเร็ว) ช่วยให้ Dev ใหม่ทดสอบได้ง่ายขึ้นโดยไม่ต้องมานั่งกดเองตั้งแต่ต้น
    - *หมายเหตุ: แก้บักข้อมูล UUID (`text = uuid`) ใน raw query Prisma ทิ้งไปแล้ว หมดปัญหา Database Sync.*
+
+---
+
+## 📋 2.2 Software Requirements Specification (SRS) & Status
+
+สรุปความต้องการของระบบและสถานะการพัฒนาในปัจจุบัน:
+
+### ระบบหลัก (Core Features)
+| ID | Requirement | Status | หมายเหตุ |
+|:---|:---|:---:|:---|
+| **MNU** | การจัดการเมนูและตัวเลือก (BOM) | ✅ | รองรับสูตรอาหารและตัดสต็อกอัตโนมัติ |
+| **POS** | การรับออเดอร์หน้าร้าน | ✅ | ใช้งานได้สมบูรณ์พร้อมระบบจัดการคิว |
+| **CUS** | ระบบออเดอร์ออนไลน์สำหรับลูกค้า | ✅ | สมัครสมาชิก, เลือกเมนู, พร้อมระบบตะกร้า |
+| **ORD** | การจัดการสถานะออเดอร์ | ✅ | PENDING -> PREPARING -> COMPLETED สื่อสารพนักงาน |
+| **INV** | ระบบคลังวัตถุดิบ (Inventory) | ✅ | ติดตามสต็อก Real-time และบันทึก Transaction |
+| **PAY** | ระบบชำระเงิน (CASH/QR/Points) | ✅ | รองรับเลย์เอาต์การเงินครบถ้วน |
+| **MEM** | ระบบสมาชิกและแต้มสะสม | ✅ | 10 บาท = 1 แต้ม และระบบ Tier สมาชิก |
+| **RPT** | รายงานและ Dashboard | ✅ | กราฟสรุปยอดขายและสถิติสินค้า |
+
+### ความต้องการอื่นๆ (Non-Functional)
+| ID | Requirement | Status | หมายเหตุ |
+|:---|:---|:---:|:---|
+| **PRF** | Performance & Offline Sync | ✅ | รองรับการทำงานแบบออฟไลน์และซิงค์ข้อมูล |
+| **USB** | Responsiveness & Usability | ✅ | ปรับปรุงรองรับ Mobile-First ครบทุกหน้าจอ |
+| **SEC** | Security & Auth | ✅ | ระบบ JWT และการแบ่งสิทธิ์ (Role-based) |
 
 ---
 
@@ -55,6 +83,16 @@
 2. รัน `docker compose up -d` เพื่อเปิดฐานข้อมูล Postgres ในคอนเทนเนอร์
 3. ป้อนคำสั่ง `pnpx prisma db push` เพื่อดันโครงสร้างตาราง (Schema) ไปใส่ DB แบบรวดเร็ว
 4. อัปเดต package ด้วย `pnpm install` และรันด้วย `pnpm dev` เข้าทำงานที่ `http://localhost:3000` ทันที
+
+## 🛠️ สรุปการแก้ปัญหาเบื้องต้น (Quick Start Troubleshooting)
+| ปัญหา | วิธีแก้ไข |
+|---|---|
+| รัน `pnpm dev` แล้ว Error | รัน `pnpm install` และ `npx prisma generate` |
+| เชื่อมต่อ DB ไม่ได้ | เปิด Docker Desktop และรัน `docker compose up -d` |
+| ข้อมูลสินค้า/Admin หาย | รัน `npx prisma db seed` |
+| ตารางใน DB ไม่ตรง | รัน `npx prisma db push` |
+
+รายละเอียดเพิ่มเติมดูได้ที่: [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 
 ---
 
