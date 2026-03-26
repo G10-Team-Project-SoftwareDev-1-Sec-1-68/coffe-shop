@@ -53,9 +53,9 @@ export default function LandingPage() {
       <Header />
 
       {/* Announcement Band */}
-      <div className="relative bg-primary py-3">
-        <p className="text-center text-sm text-primary-foreground/90 font-medium">
-          ☕ เปิดบริการทุกวัน 07:00 – 18:00 น. &nbsp;|&nbsp; สั่งออนไลน์ รับที่ร้าน สะดวก รวดเร็ว
+      <div className="relative bg-primary py-3 px-4">
+        <p className="text-center text-xs md:text-sm text-primary-foreground/90 font-medium leading-relaxed">
+          ☕ เปิดบริการทุกวัน 07:00 – 18:00 น. <span className="hidden sm:inline">&nbsp;|&nbsp;</span> <br className="sm:hidden" /> สั่งออนไลน์ รับที่ร้าน สะดวก รวดเร็ว
         </p>
       </div>
 
@@ -116,7 +116,7 @@ export default function LandingPage() {
           </section>
 
           {/* ─── Stats ─── */}
-          <section className="mt-20 grid grid-cols-3 gap-8 border-t border-border pt-16">
+          <section className="mt-12 md:mt-20 grid grid-cols-1 sm:grid-cols-3 gap-8 border-t border-border pt-12 md:pt-16">
             {[
               { num: "1,000+", label: "รีวิวดีเยี่ยม" },
               { num: "3,000+", label: "แก้วที่เสิร์ฟทุกเดือน" },

@@ -2,40 +2,66 @@
 import * as React from "react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ShoppingCart, Search, LogOut, User } from "lucide-react";
+import { ShoppingCart, Search, LogOut, User, ClipboardList, Menu, X } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 
 export default function Header() {
-  // 🟢 ดึงจำนวนของในตะกร้ามาโชว์ที่ไอคอน
   const { cartItems } = useCartStore();
   const basketCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  const [user, setUser] = useState(null); // null = ยังโหลด, false = ไม่ได้ login
+  // Use currentUser to avoid collision with 'User' icon from lucide-react
+  const [currentUser, setCurrentUser] = useState(null); 
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setUser(data?.user ?? false))
-      .catch(() => setUser(false));
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          // API returns { user: { ... } }
+          setCurrentUser(data.user || false);
+        } else {
+          setCurrentUser(false);
+        }
+      } catch (err) {
+        console.error("Auth check failed:", err);
+        setCurrentUser(false);
+      }
+    }
+    checkAuth();
+
+    const handleClickOutside = () => setShowDropdown(false);
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    window.location.href = "/login";
-  }
-
-  const displayName = user
-    ? user.firstName + (user.lastName ? ` ${user.lastName}` : "")
-    : null;
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/login";
+    } catch (err) {
+      console.error("Logout failed:", err);
+      window.location.href = "/login";
+    }
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] bg-[#FDF8F1]/80 backdrop-blur-md border-b border-[#E5D5C6]/30">
-      <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 md:h-24 flex items-center justify-between">
         
+        {/* Mobile Menu Button */}
+        <button 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="md:hidden p-2 text-[#3D2B1F] hover:bg-[#B87C4C]/10 rounded-xl transition-colors"
+        >
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
         {/* 1. Logo Section (KAFUNG COFFEE BAR) */}
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-14 h-14 bg-[#B87C4C] rounded-full flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform duration-300">
-             {/* ใส่รูปโลโก้จริงของเนมตรงนี้นะครับ */}
              <span className="text-2xl text-white">☕</span>
           </div>
           <div className="flex flex-col">
@@ -48,9 +74,14 @@ export default function Header() {
           </div>
         </Link>
 
-        {/* 2. Navigation Menu (ตรงกลาง) */}
+        {/* 2. Navigation Menu */}
         <nav className="hidden md:flex items-center gap-10">
-          {[{label: "HOME", href: "/"}, {label: "SERVICES", href: "/#services"}, {label: "MENU", href: "/menu"}, {label: "REVIEWS", href: "/#reviews"}].map(({label, href}) => (
+          {[
+            {label: "HOME", href: "/"}, 
+            {label: "SERVICES", href: "/#services"}, 
+            {label: "MENU", href: "/menu"}, 
+            {label: "REVIEWS", href: "/#reviews"}
+          ].map(({label, href}) => (
             <Link 
               key={label} 
               href={href} 
@@ -61,15 +92,13 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* 3. Action Buttons (Search, Cart, Sign Up) */}
+        {/* 3. Action Buttons */}
         <div className="flex items-center gap-6">
           
-          {/* ปุ่มค้นหา */}
           <button className="text-[#3D2B1F] hover:text-[#B87C4C] transition-colors">
             <Search size={24} strokeWidth={2.5} />
           </button>
 
-          {/* ปุ่มตะกร้า (มีตัวเลขแจ้งเตือน) */}
           <Link href="/cart" className="relative text-[#3D2B1F] hover:text-[#B87C4C] transition-colors">
             <ShoppingCart size={24} strokeWidth={2.5} />
             {basketCount > 0 && (
@@ -80,29 +109,51 @@ export default function Header() {
           </Link>
 
           {/* Auth section */}
-          {user === null ? (
-            // Loading skeleton
+          {currentUser === null ? (
             <div className="h-10 w-28 animate-pulse rounded-full bg-[#E5D5C6]" />
-          ) : user ? (
-            // Logged-in: แสดงชื่อ + logout
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 rounded-full border border-[#E5D5C6] bg-white px-4 py-2 shadow-sm">
-                <User className="h-4 w-4 text-[#B87C4C]" />
-                <span className="text-sm font-bold text-[#3D2B1F] max-w-[120px] truncate uppercase tracking-wide">
-                  {displayName}
-                </span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 text-red-600 px-4 py-2 text-sm font-bold transition hover:bg-red-100 uppercase tracking-widest"
-                aria-label="ออกจากระบบ"
+          ) : currentUser ? (
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <button 
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="flex items-center gap-2 rounded-full border border-[#E5D5C6] bg-white px-4 py-2 shadow-sm hover:border-[#B87C4C] transition-all active:scale-95 cursor-pointer"
               >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <div className="w-6 h-6 rounded-full bg-[#B87C4C] flex items-center justify-center text-white">
+                  <User size={14} strokeWidth={3} />
+                </div>
+                <span className="text-sm font-bold text-[#3D2B1F] max-w-[100px] truncate uppercase tracking-wide">
+                  {currentUser.firstName}
+                </span>
               </button>
+
+              {showDropdown && (
+                <div className="absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-2xl border border-[#E5D5C6]/50 py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <p className="px-4 py-2 text-[10px] font-black text-[#B87C4C] uppercase tracking-widest border-b border-[#E5D5C6]/30 mb-1">
+                    ยินดีต้อนรับ, {currentUser.firstName}
+                  </p>
+                  
+                  <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#3D2B1F] hover:bg-[#FDF8F1] hover:text-[#B87C4C] transition-colors underline-none">
+                    <User size={18} />
+                    <span>โปรไฟล์สมาชิก</span>
+                  </Link>
+                  
+                  <Link href="/orders" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#3D2B1F] hover:bg-[#FDF8F1] hover:text-[#B87C4C] transition-colors underline-none">
+                    <ClipboardList size={18} />
+                    <span>ประวัติการสั่งซื้อ</span>
+                  </Link>
+
+                  <div className="border-t border-[#E5D5C6]/30 mt-1">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                    >
+                      <LogOut size={18} />
+                      <span>ออกจากระบบ</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
-            // Not logged in: แสดงปุ่ม login + register ดีไซน์ใหม่
             <div className="flex items-center gap-3">
               <Link
                 href="/login"
@@ -120,6 +171,37 @@ export default function Header() {
           )}
         </div>
       </div>
+
+      {/* Mobile Menu Drawer */}
+      {isMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-[90] bg-[#FDF8F1] pt-20 animate-in slide-in-from-left duration-300">
+          <nav className="flex flex-col p-6 gap-2">
+            {[
+              {label: "HOME", href: "/"}, 
+              {label: "SERVICES", href: "/#services"}, 
+              {label: "MENU", href: "/menu"}, 
+              {label: "REVIEWS", href: "/#reviews"}
+            ].map(({label, href}) => (
+              <Link 
+                key={label} 
+                href={href} 
+                onClick={() => setIsMenuOpen(false)}
+                className="text-xl font-black italic text-[#6B5E55] p-4 rounded-2xl hover:bg-[#B87C4C]/10 hover:text-[#B87C4C] transition-all"
+              >
+                {label}
+              </Link>
+            ))}
+            
+            {/* Mobile Auth Actions - Only if not logged in */}
+            {!currentUser && (
+               <div className="grid grid-cols-2 gap-4 mt-6">
+                 <Link href="/login" className="bg-white border border-[#B87C4C] text-[#B87C4C] p-4 rounded-2xl font-black italic text-center text-sm" onClick={() => setIsMenuOpen(false)}>LOG IN</Link>
+                 <Link href="/register" className="bg-[#3D2B1F] text-white p-4 rounded-2xl font-black italic text-center text-sm" onClick={() => setIsMenuOpen(false)}>SIGN UP</Link>
+               </div>
+            )}
+          </nav>
+        </div>
+      )}
 
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@700&display=swap');

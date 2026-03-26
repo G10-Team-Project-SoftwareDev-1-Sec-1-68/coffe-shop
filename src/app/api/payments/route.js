@@ -77,7 +77,10 @@ export async function POST(request) {
         throw err;
       }
 
-      if (!sameMoney(order.totalAmount, amount)) {
+      // STAFF/ADMIN ยืนยันเงินด้วยตนเองที่ POS ไม่ต้อง validate amount
+      // CUSTOMER ต้องส่ง amount ตรงกับยอดจริงเสมอ
+      const isStaffOrAdmin = auth.payload.role === "STAFF" || auth.payload.role === "ADMIN";
+      if (!isStaffOrAdmin && !sameMoney(order.totalAmount, amount)) {
         const err = new Error("Amount must match order total");
         err.code = "AMOUNT_MISMATCH";
         throw err;

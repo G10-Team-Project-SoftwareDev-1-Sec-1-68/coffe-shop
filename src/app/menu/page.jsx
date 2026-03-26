@@ -75,6 +75,7 @@ export default function PosStyleMenuPage() {
     addToCart(cartItem, quantity, {
       size: selectedVariant.name,
       toppings: Object.values(selectedOptions).map(o => o.name),
+      optionIds: Object.keys(selectedOptions), // Store the IDs for stock deduction
       totalPricePerUnit: calculateTotal() / quantity,
       displayString,
     });
@@ -87,15 +88,15 @@ export default function PosStyleMenuPage() {
       {/* Top Header */}
       <Header />
 
-      <div className="flex flex-1 overflow-hidden mt-20 relative">
-        {/* Left Sidebar - Categories */}
-        <div className="w-[100px] md:w-[240px] bg-white border-r border-gray-200 flex flex-col shrink-0 z-10 overflow-y-auto shadow-sm">
-          <div className="p-4 md:p-6 pb-2">
-            <h2 className="text-gray-400 font-bold text-xs uppercase tracking-wider hidden md:block mb-4">Categories</h2>
+      <div className="flex flex-1 overflow-hidden mt-20 md:mt-24 relative flex-col md:flex-row">
+        {/* Left Sidebar - Categories (Horizontal Scroll on Mobile, Sidebar on Desktop) */}
+        <div className="w-full md:w-[240px] bg-white border-b md:border-b-0 md:border-r border-gray-200 flex md:flex-col shrink-0 z-10 overflow-x-auto md:overflow-y-auto shadow-sm no-scrollbar">
+          <div className="p-4 md:p-6 pb-2 hidden md:block">
+            <h2 className="text-gray-400 font-bold text-xs uppercase tracking-wider mb-4">Categories</h2>
           </div>
-          <div className="flex flex-col gap-2 px-3 md:px-4 pb-4">
+          <div className="flex flex-row md:flex-col gap-2 px-3 md:px-4 py-3 md:pb-4 min-w-max md:min-w-0">
             {isLoading ? (
-               [1, 2, 3, 4].map(i => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)
+               [1, 2, 3, 4].map(i => <div key={i} className="h-10 w-24 md:h-14 md:w-full bg-gray-100 rounded-xl animate-pulse" />)
             ) : (
               categories.map(cat => {
                 const Icon = getCategoryIcon(cat.name);
@@ -104,14 +105,14 @@ export default function PosStyleMenuPage() {
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategoryId(cat.id)}
-                    className={`flex items-center gap-3 p-3 md:p-4 rounded-xl transition-all ${
+                    className={`flex items-center gap-3 px-4 py-2.5 md:p-4 rounded-xl transition-all whitespace-nowrap ${
                       isActive 
                       ? "bg-amber-700 text-white shadow-md shadow-amber-900/20" 
-                      : "text-gray-600 hover:bg-amber-50 hover:text-amber-900"
+                      : "text-gray-600 hover:bg-amber-50 hover:text-amber-900 bg-gray-50 md:bg-transparent"
                     }`}
                   >
-                    <Icon className="w-5 h-5 shrink-0" />
-                    <span className="font-bold text-sm hidden md:block text-left">{cat.name}</span>
+                    <Icon className="w-4 h-4 md:w-5 md:h-5 shrink-0" />
+                    <span className="font-bold text-xs md:text-sm text-left">{cat.name}</span>
                   </button>
                 )
               })
@@ -135,11 +136,11 @@ export default function PosStyleMenuPage() {
             <div className="text-center text-red-500 py-10 font-bold">Failed to load menu</div>
           ) : activeCategory?.products?.length > 0 ? (
             <>
-              <h1 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">
                 {activeCategory.name}
-                <span className="text-sm font-bold bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{activeCategory.products.length}</span>
+                <span className="text-xs md:text-sm font-bold bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{activeCategory.products.length}</span>
               </h1>
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                 {activeCategory.products.map(product => (
                   <button
                     key={product.id}
