@@ -66,6 +66,7 @@ export default function POSOrderSystem() {
   const [error, setError] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [toast, setToast] = useState({ message: "", type: "success" });
+  const [mounted, setMounted] = useState(false);
   
   // QR Payment Modal State
   const [showQR, setShowQR] = useState(false);
@@ -136,6 +137,7 @@ export default function POSOrderSystem() {
   };
 
   useEffect(() => {
+    setMounted(true);
     fetchOrders();
     loadOfflineQueue();
     const interval = setInterval(() => {
@@ -320,11 +322,11 @@ export default function POSOrderSystem() {
             </button>
           )}
           <div className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-sm font-medium text-gray-600">
-            <div className={`w-2 h-2 rounded-full ${checkOnline() ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
-            {checkOnline() ? 'เชื่อมต่อระบบรับออเดอร์' : 'โหมดการทำงานออฟไลน์'}
+            <div className={`w-2 h-2 rounded-full ${(!mounted || checkOnline()) ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+            {!mounted ? 'กำลังโหลด...' : (checkOnline() ? 'เชื่อมต่อระบบรับออเดอร์' : 'โหมดการทำงานออฟไลน์')}
           </div>
           <p className="text-sm text-gray-500 font-medium hidden sm:block">
-            {new Date().toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "short" })}
+            {mounted && new Date().toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "short" })}
           </p>
         </div>
       </div>
