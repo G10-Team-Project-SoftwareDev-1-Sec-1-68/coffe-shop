@@ -27,6 +27,49 @@ const ErrDetails = z
 
 const bearer = [{ bearerAuth: [] }];
 
+/* -------------------- Shared Schemas -------------------- */
+
+const OrderStatusEnum = z.enum(["PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"]);
+const OrderTypeEnum = z.enum(["ONLINE", "POS"]);
+const PaymentMethodEnum = z.enum(["CASH", "QR_CODE", "CREDIT_CARD", "E_WALLET", "POINTS"]);
+const PaymentStatusEnum = z.enum(["PENDING", "COMPLETED", "FAILED", "REFUNDED"]);
+
+const OrderItemSchema = z.object({
+  variantId: z.string().uuid(),
+  quantity: z.number().int().positive(),
+  priceAtTime: z.union([z.number(), z.string()]),
+  options: z.any().optional().nullable(),
+}).openapi("OrderItem");
+
+const SyncPaymentSchema = z.object({
+  method: PaymentMethodEnum,
+  status: PaymentStatusEnum,
+  amount: z.union([z.number(), z.string()]),
+  referenceNo: z.string().max(200).optional().nullable(),
+  qrPayload: z.string().max(2000).optional().nullable(),
+  slipUrl: z.string().max(2000).optional().nullable(),
+  pointsUsed: z.number().int().optional().nullable(),
+  paidAt: z.string().optional().nullable(),
+}).openapi("SyncPayment");
+
+const SyncOrderSchema = z.object({
+  id: z.string().uuid().optional(),
+  orderNumber: z.string().min(1).max(120),
+  type: OrderTypeEnum,
+  status: OrderStatusEnum.optional(),
+  totalAmount: z.union([z.number(), z.string()]),
+  customerId: z.string().uuid().optional().nullable(),
+  staffId: z.string().uuid().optional().nullable(),
+  promotionId: z.string().uuid().optional().nullable(),
+  pickupMethod: z.enum(["SELF_PICKUP", "DELIVERY"]).optional(),
+  scheduledAt: z.string().optional().nullable(),
+  deliveryAddress: z.string().max(2000).optional().nullable(),
+  isOffline: z.boolean().optional(),
+  createdAt: z.string().optional(),
+  items: z.array(OrderItemSchema).min(1),
+  payment: SyncPaymentSchema,
+}).openapi("SyncOrder");
+
 /* -------------------- Auth -------------------- */
 
 registry.registerPath({
@@ -303,9 +346,7 @@ registry.registerPath({
   security: bearer,
   request: {
     query: z.object({
-      status: z
-        .enum(["PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"])
-        .optional(),
+      status: OrderStatusEnum.optional(),
     }),
   },
   responses: {
@@ -334,21 +375,14 @@ registry.registerPath({
       content: {
         "application/json": {
           schema: z.object({
-            type: z.enum(["ONLINE", "POS"]),
+            type: OrderTypeEnum,
             totalAmount: z.union([z.number(), z.string()]),
-            items: z.array(
-              z.object({
-                variantId: z.string().uuid(),
-                quantity: z.number().int().positive(),
-                priceAtTime: z.union([z.number(), z.string()]),
-                options: z.any().optional().nullable(),
-              })
-            ),
+            items: z.array(OrderItemSchema).min(1),
             pickupMethod: z.enum(["SELF_PICKUP", "DELIVERY"]).optional(),
             scheduledAt: z.string().optional().nullable(),
             deliveryAddress: z.string().optional().nullable(),
             customerId: z.string().uuid().optional().nullable(),
-          }),
+          }).openapi("CreateOrderBody"),
         },
       },
     },
@@ -380,8 +414,8 @@ registry.registerPath({
       content: {
         "application/json": {
           schema: z.object({
-            orders: z.array(z.record(z.string(), z.any())),
-          }),
+            orders: z.array(SyncOrderSchema).min(1),
+          }).openapi("SyncBody"),
         },
       },
     },
@@ -414,14 +448,8 @@ registry.registerPath({
       content: {
         "application/json": {
           schema: z.object({
-            status: z.enum([
-              "PENDING",
-              "PREPARING",
-              "READY",
-              "COMPLETED",
-              "CANCELLED",
-            ]),
-          }),
+            status: OrderStatusEnum,
+          }).openapi("PatchStatusBody"),
         },
       },
     },
@@ -526,7 +554,15 @@ registry.registerPath({
       description: "ผลการตรวจ",
       content: {
         "application/json": {
-          schema: z.record(z.string(), z.any()),
+          schema: z.object({
+            valid: z.boolean(),
+            promotionId: z.string().uuid().optional(),
+            code: z.string().optional(),
+            isPercent: z.boolean().optional(),
+            discountValue: z.string().optional(),
+            discountAmount: z.string().optional(),
+            reason: z.string().optional(),
+          }).openapi("PromoValidateResult"),
         },
       },
     },
@@ -548,7 +584,7 @@ registry.registerPath({
         "application/json": {
           schema: z.object({
             orderId: z.string().uuid(),
-            method: z.enum(["CASH", "QR_CODE", "CREDIT_CARD"]),
+            method: PaymentMethodEnum,
             amount: z.union([z.number(), z.string()]),
             pointsUsed: z.number().int().nonnegative().optional().nullable(),
           }),
@@ -585,8 +621,8 @@ registry.registerPath({
       content: {
         "application/json": {
           schema: z.object({
-            status: z.enum(["COMPLETED", "FAILED"]),
-          }),
+            status: PaymentStatusEnum,
+          }).openapi("PatchPaymentStatusBody"),
         },
       },
     },
@@ -632,7 +668,18 @@ registry.registerPath({
             totalSales: z.string(),
             totalOrders: z.number(),
             lowStockItems: z.number(),
-          }),
+            topProducts: z.array(z.object({
+              name: z.string(),
+              quantity: z.number(),
+              revenue: z.number(),
+            })).optional(),
+            chartData: z.array(z.object({
+              day: z.string(),
+              value: z.number(),
+              label: z.string(),
+              heightPercent: z.number(),
+            })).optional(),
+          }).openapi("DashboardSummary"),
         },
       },
     },
@@ -650,7 +697,7 @@ registry.registerPath({
   security: bearer,
   request: {
     query: z.object({
-      role: z.enum(["CUSTOMER", "STAFF"]).optional(),
+      role: z.enum(["CUSTOMER", "STAFF", "ADMIN"]).optional(),
     }),
   },
   responses: {
@@ -686,7 +733,7 @@ registry.registerPath({
             lastName: z.string().optional().nullable(),
             phone: z.string().optional().nullable(),
             role: z.enum(["STAFF", "ADMIN"]),
-          }),
+          }).openapi("CreateStaffBody"),
         },
       },
     },

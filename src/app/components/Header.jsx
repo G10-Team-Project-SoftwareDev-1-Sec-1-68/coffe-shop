@@ -99,7 +99,7 @@ export default function Header() {
             <Search size={24} strokeWidth={2.5} />
           </button>
 
-          <Link href="/cart" className="relative text-[#3D2B1F] hover:text-[#B87C4C] transition-colors">
+          <Link href="/cart" aria-label="cart" className="relative text-[#3D2B1F] hover:text-[#B87C4C] transition-colors">
             <ShoppingCart size={24} strokeWidth={2.5} />
             {basketCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-bounce">

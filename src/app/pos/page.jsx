@@ -6,6 +6,7 @@ import Toast from "@/app/components/Toast";
 import Header from "@/app/components/Header";
 import { QRCodeCanvas } from "qrcode.react";
 import generatePayload from "promptpay-qr";
+import { getPendingQueue, clearQueueAfterSync, isOnline as checkOnline } from "@/lib/offline-db";
 
 // ============================================================
 // Sub-components
@@ -65,6 +66,7 @@ export default function POSOrderSystem() {
   const [error, setError] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [toast, setToast] = useState({ message: "", type: "success" });
+  const [mounted, setMounted] = useState(false);
   
   // QR Payment Modal State
   const [showQR, setShowQR] = useState(false);
@@ -99,9 +101,49 @@ export default function POSOrderSystem() {
     }
   };
 
+  // Offline Sync State
+  const [offlineQueue, setOfflineQueue] = useState([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const loadOfflineQueue = async () => {
+    const queue = await getPendingQueue();
+    setOfflineQueue(queue);
+  };
+
+  const handleSyncNow = async () => {
+    if (offlineQueue.length === 0 || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const res = await fetch("/api/orders/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orders: offlineQueue.map(q => q.payload) })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Sync failed");
+      }
+
+      await clearQueueAfterSync(offlineQueue.map(q => q.id));
+      setToast({ message: `ซิงก์ข้อมูลออเดอร์ ${offlineQueue.length} รายการสำเร็จ!`, type: "success" });
+      await loadOfflineQueue();
+      fetchOrders();
+    } catch (err) {
+      setToast({ message: "Sync Error: " + err.message, type: "error" });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   useEffect(() => {
+    setMounted(true);
     fetchOrders();
-    const interval = setInterval(() => fetchOrders(true), 10000);
+    loadOfflineQueue();
+    const interval = setInterval(() => {
+      fetchOrders(true);
+      loadOfflineQueue();
+    }, 10000);
     return () => clearInterval(interval);
   }, [activeTab]);
 
@@ -270,12 +312,21 @@ export default function POSOrderSystem() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          {offlineQueue.length > 0 && (
+            <button 
+              onClick={handleSyncNow}
+              disabled={isSyncing}
+              className="flex items-center gap-2 bg-amber-100 px-4 py-2 rounded-full text-sm font-bold text-amber-700 hover:bg-amber-200 transition-all animate-pulse"
+            >
+              {isSyncing ? "กำลังซิงก์..." : `ซิงก์ออเดอร์ค้างไว้ (${offlineQueue.length})`}
+            </button>
+          )}
           <div className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-sm font-medium text-gray-600">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            เชื่อมต่อระบบรับออเดอร์
+            <div className={`w-2 h-2 rounded-full ${(!mounted || checkOnline()) ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+            {!mounted ? 'กำลังโหลด...' : (checkOnline() ? 'เชื่อมต่อระบบรับออเดอร์' : 'โหมดการทำงานออฟไลน์')}
           </div>
           <p className="text-sm text-gray-500 font-medium hidden sm:block">
-            {new Date().toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "short" })}
+            {mounted && new Date().toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "short" })}
           </p>
         </div>
       </div>
