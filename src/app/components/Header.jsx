@@ -9,6 +9,7 @@ export default function Header() {
   const { cartItems } = useCartStore();
   const basketCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
+  // Use currentUser to avoid collision with 'User' icon from lucide-react
   const [currentUser, setCurrentUser] = useState(null); 
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -18,11 +19,13 @@ export default function Header() {
         const res = await fetch("/api/auth/me");
         if (res.ok) {
           const data = await res.json();
+          // API returns { user: { ... } }
           setCurrentUser(data.user || false);
         } else {
           setCurrentUser(false);
         }
       } catch (err) {
+        console.error("Auth check failed:", err);
         setCurrentUser(false);
       }
     }
@@ -34,11 +37,14 @@ export default function Header() {
   }, []);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = "/login";
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/login";
+    } catch (err) {
+      console.error("Logout failed:", err);
+      window.location.href = "/login";
+    }
   };
-
-  const displayName = currentUser ? `${currentUser.firstName}${currentUser.lastName ? " " + currentUser.lastName : ""}` : "";
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] bg-[#FDF8F1]/80 backdrop-blur-md border-b border-[#E5D5C6]/30">
@@ -59,9 +65,14 @@ export default function Header() {
           </div>
         </Link>
 
-        {/* 2. Navigation Menu (ตรงกลาง) */}
+        {/* 2. Navigation Menu */}
         <nav className="hidden md:flex items-center gap-10">
-          {[{label: "HOME", href: "/"}, {label: "SERVICES", href: "/#services"}, {label: "MENU", href: "/menu"}, {label: "REVIEWS", href: "/#reviews"}].map(({label, href}) => (
+          {[
+            {label: "HOME", href: "/"}, 
+            {label: "SERVICES", href: "/#services"}, 
+            {label: "MENU", href: "/menu"}, 
+            {label: "REVIEWS", href: "/#reviews"}
+          ].map(({label, href}) => (
             <Link 
               key={label} 
               href={href} 
@@ -72,7 +83,7 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* 3. Action Buttons (Search, Cart, Sign Up) */}
+        {/* 3. Action Buttons */}
         <div className="flex items-center gap-6">
           
           <button className="text-[#3D2B1F] hover:text-[#B87C4C] transition-colors">
