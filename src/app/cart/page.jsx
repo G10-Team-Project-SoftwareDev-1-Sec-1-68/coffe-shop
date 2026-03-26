@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Header from "../components/Header"; 
 import Toast from "../components/Toast";
 import { useCartStore } from "../store/cartStore";
+import { addToQueue, isOnline } from "@/lib/offline-db";
 
 export default function CartPage() {
   const router = useRouter();
@@ -22,19 +23,49 @@ export default function CartPage() {
     if (cartItems.length === 0) return;
     setIsSubmitting(true);
 
-    try {
-      // 1. Prepare items payload for API
-      const orderItems = cartItems.map(item => ({
-        variantId: item.variant.id,
-        quantity: item.quantity,
-        priceAtTime: item.price,
-        options: { 
-          display: item.selectedOptions,
-          optionIds: item.optionIds // Include the IDs for backend mapping
-        } 
-      }));
+    const orderItems = cartItems.map(item => ({
+      variantId: item.variant.id,
+      quantity: item.quantity,
+      priceAtTime: item.price,
+      options: { 
+        display: item.selectedOptions,
+        optionIds: item.optionIds 
+      } 
+    }));
 
-      // 2. Call API to create order
+    // Check if offline
+    if (!isOnline()) {
+      try {
+        const offlineOrder = {
+          orderNumber: `OFFLINE-${Date.now()}`,
+          type: "POS", // Use POS type for easier syncing/testing
+          totalAmount: total,
+          pickupMethod: "SELF_PICKUP",
+          isOffline: true,
+          items: orderItems,
+          payment: {
+            method: "CASH",
+            status: "COMPLETED",
+            amount: total,
+            paidAt: new Date().toISOString()
+          },
+          createdAt: new Date().toISOString()
+        };
+
+        await addToQueue(offlineOrder);
+        setToast({ message: "คุณอยู่ในโหมดออฟไลน์: ออเดอร์ถูกบันทึกลงเครื่องแล้ว กรุณาไปที่หน้า POS เพื่อซิงก์ข้อมูลเมื่อมีเน็ต", type: "success" });
+        clearCart();
+        setTimeout(() => router.push("/pos"), 2000);
+        return;
+      } catch (err) {
+        setToast({ message: "ไม่สามารถบันทึกออเดอร์ออฟไลน์ได้: " + err.message, type: "error" });
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    try {
+      // 2. Call API to create order (Normal flow)
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,7 +83,6 @@ export default function CartPage() {
         throw new Error(data.error || "ไม่สามารถสร้างคำสั่งซื้อได้");
       }
 
-      // 3. Clear cart and redirect
       clearCart();
       router.push(`/orders`);
       
