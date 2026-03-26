@@ -9,7 +9,7 @@ export default function Header() {
   const { cartItems } = useCartStore();
   const basketCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  const [user, setUser] = useState(null); 
+  const [currentUser, setCurrentUser] = useState(null); 
   const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
@@ -18,12 +18,12 @@ export default function Header() {
         const res = await fetch("/api/auth/me");
         if (res.ok) {
           const data = await res.json();
-          setUser(data.user || false);
+          setCurrentUser(data.user || false);
         } else {
-          setUser(false);
+          setCurrentUser(false);
         }
       } catch (err) {
-        setUser(false);
+        setCurrentUser(false);
       }
     }
     checkAuth();
@@ -38,7 +38,7 @@ export default function Header() {
     window.location.href = "/login";
   };
 
-  const displayName = user ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}` : "";
+  const displayName = currentUser ? `${currentUser.firstName}${currentUser.lastName ? " " + currentUser.lastName : ""}` : "";
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] bg-[#FDF8F1]/80 backdrop-blur-md border-b border-[#E5D5C6]/30">
@@ -47,7 +47,6 @@ export default function Header() {
         {/* 1. Logo Section (KAFUNG COFFEE BAR) */}
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-14 h-14 bg-[#B87C4C] rounded-full flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform duration-300">
-             {/* ใส่รูปโลโก้จริงของเนมตรงนี้นะครับ */}
              <span className="text-2xl text-white">☕</span>
           </div>
           <div className="flex flex-col">
@@ -76,12 +75,10 @@ export default function Header() {
         {/* 3. Action Buttons (Search, Cart, Sign Up) */}
         <div className="flex items-center gap-6">
           
-          {/* ปุ่มค้นหา */}
           <button className="text-[#3D2B1F] hover:text-[#B87C4C] transition-colors">
             <Search size={24} strokeWidth={2.5} />
           </button>
 
-          {/* ปุ่มตะกร้า (มีตัวเลขแจ้งเตือน) */}
           <Link href="/cart" className="relative text-[#3D2B1F] hover:text-[#B87C4C] transition-colors">
             <ShoppingCart size={24} strokeWidth={2.5} />
             {basketCount > 0 && (
@@ -92,11 +89,9 @@ export default function Header() {
           </Link>
 
           {/* Auth section */}
-          {user === null ? (
-            // Loading skeleton
+          {currentUser === null ? (
             <div className="h-10 w-28 animate-pulse rounded-full bg-[#E5D5C6]" />
-          ) : user ? (
-            // Logged-in: Dropdown Menu
+          ) : currentUser ? (
             <div className="relative" onClick={(e) => e.stopPropagation()}>
               <button 
                 onClick={() => setShowDropdown(!showDropdown)}
@@ -106,15 +101,14 @@ export default function Header() {
                   <User size={14} strokeWidth={3} />
                 </div>
                 <span className="text-sm font-bold text-[#3D2B1F] max-w-[100px] truncate uppercase tracking-wide">
-                  {user.firstName}
+                  {currentUser.firstName}
                 </span>
               </button>
 
-              {/* Dropdown Content */}
               {showDropdown && (
                 <div className="absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-2xl border border-[#E5D5C6]/50 py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                   <p className="px-4 py-2 text-[10px] font-black text-[#B87C4C] uppercase tracking-widest border-b border-[#E5D5C6]/30 mb-1">
-                    ยินดีต้อนรับ, {user.firstName}
+                    ยินดีต้อนรับ, {currentUser.firstName}
                   </p>
                   
                   <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#3D2B1F] hover:bg-[#FDF8F1] hover:text-[#B87C4C] transition-colors underline-none">
@@ -140,7 +134,6 @@ export default function Header() {
               )}
             </div>
           ) : (
-            // Not logged in: แสดงปุ่ม login + register ดีไซน์ใหม่
             <div className="flex items-center gap-3">
               <Link
                 href="/login"

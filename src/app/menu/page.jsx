@@ -75,6 +75,7 @@ export default function PosStyleMenuPage() {
     addToCart(cartItem, quantity, {
       size: selectedVariant.name,
       toppings: Object.values(selectedOptions).map(o => o.name),
+      optionIds: Object.keys(selectedOptions), // Store the IDs for stock deduction
       totalPricePerUnit: calculateTotal() / quantity,
       displayString,
     });

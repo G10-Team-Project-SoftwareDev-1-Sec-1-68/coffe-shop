@@ -90,11 +90,25 @@ export async function PATCH(request, context) {
         }
 
         for (const item of existing.items) {
-          const recipes = await tx.recipe.findMany({
+          // A. Deduct Variant Recipes
+          const variantRecipes = await tx.recipe.findMany({
             where: { variantId: item.variantId },
           });
 
-          for (const rec of recipes) {
+          // B. Deduct Option Recipes (if any)
+          let optionRecipes = [];
+          const opts = item.options && typeof item.options === 'object' ? item.options : {};
+          const selectedOptionIds = opts.optionIds || [];
+          
+          if (selectedOptionIds.length > 0) {
+            optionRecipes = await tx.recipe.findMany({
+              where: { productOptionId: { in: selectedOptionIds } },
+            });
+          }
+
+          const allRecipes = [...variantRecipes, ...optionRecipes];
+
+          for (const rec of allRecipes) {
             const deduct = rec.quantity * item.quantity;
             const updated = await tx.ingredient.updateMany({
               where: {
@@ -107,7 +121,7 @@ export async function PATCH(request, context) {
             });
 
             if (updated.count !== 1) {
-              const err = new Error("Insufficient stock");
+              const err = new Error(`Insufficient stock for ingredient ${rec.ingredientId}`);
               err.code = "INSUFFICIENT_STOCK";
               err.ingredientId = rec.ingredientId;
               throw err;

@@ -28,7 +28,10 @@ export default function CartPage() {
         variantId: item.variant.id,
         quantity: item.quantity,
         priceAtTime: item.price,
-        options: { display: item.selectedOptions } // Save customization text
+        options: { 
+          display: item.selectedOptions,
+          optionIds: item.optionIds // Include the IDs for backend mapping
+        } 
       }));
 
       // 2. Call API to create order
