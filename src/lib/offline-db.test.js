@@ -13,7 +13,16 @@ import {
 
 describe("Offline Sync Manager", () => {
   beforeEach(() => {
-    if (typeof localStorage !== "undefined") localStorage.removeItem("coffee_shop_order_queue");
+    // Clear localStorage mock before each test
+    const store = {};
+    const mockLocalStorage = {
+      getItem: vi.fn((key) => store[key] || null),
+      setItem: vi.fn((key, value) => { store[key] = value.toString(); }),
+      removeItem: vi.fn((key) => { delete store[key]; }),
+      clear: vi.fn(() => { for (const key in store) delete store[key]; }),
+    };
+    
+    vi.stubGlobal("localStorage", mockLocalStorage);
     vi.stubGlobal("navigator", { onLine: false });
   });
 
