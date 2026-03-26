@@ -75,7 +75,7 @@ export default function RewardItems({ userPoints = 0, onRedeemSuccess }) {
         return (
           <div
             key={item.id}
-            className={`bg-white rounded-[2.5rem] p-6 shadow-lg flex justify-between items-center border transition-all
+            className={`bg-white rounded-[2rem] sm:rounded-[2.5rem] p-4 sm:p-6 shadow-lg flex flex-col sm:flex-row justify-between items-center border transition-all gap-4
               ${canRedeem
                 ? "border-coffee-dark/5 active:scale-95"
                 : "border-coffee-dark/5 opacity-60"
@@ -83,24 +83,24 @@ export default function RewardItems({ userPoints = 0, onRedeemSuccess }) {
           >
             <div className="flex items-center gap-6 overflow-hidden">
               {/* ไอคอน */}
-              <div className={`p-5 rounded-[1.8rem] border border-black/5 flex items-center justify-center min-w-[85px] min-h-[85px] flex-shrink-0
+              <div className={`p-4 sm:p-5 rounded-[1.5rem] sm:rounded-[1.8rem] border border-black/5 flex items-center justify-center min-w-[70px] min-h-[70px] sm:min-w-[85px] sm:min-h-[85px] flex-shrink-0
                 ${canRedeem ? "bg-[#EAEAEA] text-coffee-gold" : "bg-gray-100 text-gray-400"}`}>
-                <item.icon size={40} strokeWidth={2.5} />
+                <item.icon size={32} className="sm:w-10 sm:h-10" strokeWidth={2.5} />
               </div>
 
               {/* รายละเอียด */}
-              <div className="flex flex-col justify-center overflow-hidden">
-                <h4 className="text-coffee-dark font-black text-2xl italic tracking-tighter leading-none mb-1">
+              <div className="flex flex-col justify-center overflow-hidden text-center sm:text-left">
+                <h4 className="text-coffee-dark font-black text-xl sm:text-2xl italic tracking-tighter leading-none mb-1">
                   {item.titleTh}
                 </h4>
-                <p className="text-muted-foreground text-[12px] font-bold italic leading-snug mb-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                <p className="text-muted-foreground text-[10px] sm:text-[12px] font-bold italic leading-snug mb-2 sm:whitespace-nowrap overflow-hidden text-ellipsis">
                   {item.descTh}
                 </p>
-                <div className="flex items-baseline gap-1">
-                  <span className={`font-black text-xl italic leading-none ${canRedeem ? "text-coffee-gold" : "text-gray-400"}`}>
+                <div className="flex items-baseline justify-center sm:justify-start gap-1">
+                  <span className={`font-black text-lg sm:text-xl italic leading-none ${canRedeem ? "text-coffee-gold" : "text-gray-400"}`}>
                     ใช้ {item.points}
                   </span>
-                  <span className={`font-bold text-sm italic uppercase ${canRedeem ? "text-coffee-gold" : "text-gray-400"}`}>
+                  <span className={`font-bold text-xs sm:text-sm italic uppercase ${canRedeem ? "text-coffee-gold" : "text-gray-400"}`}>
                     แต้ม
                   </span>
                 </div>
@@ -111,13 +111,13 @@ export default function RewardItems({ userPoints = 0, onRedeemSuccess }) {
             <button
               onClick={() => handleRedeem(item)}
               disabled={!canRedeem || isLoading}
-              className={`flex-shrink-0 ml-4 p-3.5 rounded-full font-black text-sm uppercase italic tracking-wider px-8 transition-all shadow-md
+              className={`w-full sm:w-auto flex-shrink-0 p-3.5 rounded-full font-black text-sm uppercase italic tracking-wider px-8 transition-all shadow-md
                 ${canRedeem
                   ? "bg-coffee-dark text-white hover:bg-coffee-gold hover:text-coffee-dark"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
                 }`}
             >
-              {isLoading ? "..." : canRedeem ? "แลก" : "แต้มไม่พอ"}
+              {isLoading ? "..." : canRedeem ? "แลกเลย" : "แต้มไม่พอ"}
             </button>
           </div>
         );

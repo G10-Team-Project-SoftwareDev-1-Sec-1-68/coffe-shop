@@ -26,7 +26,7 @@ export default function MemberCard({ user }) {
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "สมาชิก";
 
   return (
-    <div className="bg-gradient-to-br from-[#FFC93C] via-[#FF9A3E] to-[#F24E1E] p-10 rounded-[3rem] shadow-[0_30px_60px_-15px_rgba(242,78,30,0.4)] border border-white/30 mb-12 text-white relative overflow-hidden group">
+    <div className="bg-gradient-to-br from-[#FFC93C] via-[#FF9A3E] to-[#F24E1E] p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] shadow-[0_30px_60px_-15px_rgba(242,78,30,0.4)] border border-white/30 mb-8 sm:mb-12 text-white relative overflow-hidden group">
 
       {/* เอฟเฟกต์แสงเงาพรีเมียม */}
       <div className="absolute top-0 right-0 w-80 h-80 bg-white/20 rounded-full blur-[90px] -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-700" />
@@ -37,7 +37,7 @@ export default function MemberCard({ user }) {
           <p className="text-coffee-dark/80 text-xs font-black italic uppercase tracking-widest">สมาชิก KAFUNG</p>
 
           {/* 🟢 ชื่อจริงจาก DB */}
-          <h2 className="text-coffee-dark font-[1000] text-4xl uppercase tracking-tighter leading-tight mb-1 drop-shadow-sm">
+          <h2 className="text-coffee-dark font-[1000] text-xl sm:text-4xl uppercase tracking-tighter leading-tight mb-1 drop-shadow-sm">
             {fullName}
           </h2>
 
@@ -56,12 +56,12 @@ export default function MemberCard({ user }) {
 
         <div className="text-right flex flex-col items-end">
           <p className="text-coffee-dark/80 text-xs font-[1000] italic uppercase tracking-widest mb-1">แต้มสะสม</p>
-          <div className="flex items-baseline justify-end gap-1.5">
+          <div className="flex items-baseline justify-end gap-1">
             {/* 🟢 แต้มจริงจาก DB */}
-            <span className="text-coffee-dark font-[1000] text-8xl italic tracking-tighter leading-[0.85] drop-shadow-md">
+            <span className="text-coffee-dark font-[1000] text-4xl sm:text-8xl italic tracking-tighter leading-[0.85] drop-shadow-md">
               {formatPoints(user?.points ?? 0)}
             </span>
-            <span className="text-coffee-dark font-black text-2xl italic uppercase tracking-tighter">แต้ม</span>
+            <span className="text-coffee-dark font-black text-sm sm:text-2xl italic uppercase tracking-tighter">แต้ม</span>
           </div>
 
           {/* 🟢 วันหมดอายุแต้ม (คำนวณจาก updatedAt) */}

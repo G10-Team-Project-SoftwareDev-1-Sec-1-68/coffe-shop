@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client')
 const { PrismaPg } = require('@prisma/adapter-pg')
 const { Pool } = require('pg')
-const { INGREDIENTS, KAFUNG_MENU } = require('./mockData')
+const { INGREDIENTS, KAFUNG_MENU, STAFF_USERS } = require('./mockData')
 require('dotenv').config()
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL })
@@ -12,18 +12,42 @@ async function main() {
   console.log('🌱 เริ่มต้นการตรวจสอบและ Seed ข้อมูล...')
 
   // ==========================================
-  // 1. ตรวจสอบว่ามีข้อมูลหลักอยู่แล้วหรือไม่
+  // 1. ตรวจสอบและ Seed ข้อมูล Users (ทำเสมอด้วย Upsert)
+  // ==========================================
+  console.log('👤 กำลังตรวจสอบ Admin User...');
+  await prisma.user.upsert({
+    where: { email: 'admin@kafung.com' },
+    update: {},
+    create: {
+      email: 'admin@kafung.com',
+      password: 'hashed_password_here', // ในระแบบจริงควรใช้ bcrypt
+      firstName: 'สมหมาย',
+      lastName: 'ใจดี',
+      role: 'ADMIN',
+    },
+  });
+
+  console.log('👤 กำลังตรวจสอบ Staff Users...');
+  for (const staff of STAFF_USERS) {
+    await prisma.user.upsert({
+      where: { email: staff.email },
+      update: {},
+      create: staff,
+    });
+  }
+
+  // ==========================================
+  // 2. ตรวจสอบข้อมูลหลัก (Menu & Ingredients)
   // ==========================================
   const categoryCount = await prisma.category.count();
   const ingredientCount = await prisma.ingredient.count();
 
-  // กำลังจะ Seed ข้อมูลพื้นฐานใหม่ ถ้ายังไม่มีเลย
   const shouldSeedMenu = categoryCount === 0;
   const shouldSeedIngredients = ingredientCount === 0;
 
   if (!shouldSeedMenu && !shouldSeedIngredients) {
-    console.log('ℹ️ พบข้อมูล Categories และ Ingredients ในระบบแล้ว จะทำการข้ามการ Seed ขนม/น้ำ เพื่อป้องกันข้อมูลออเดอร์หาย');
-    console.log('💡 หากต้องการ Reset ทั้งหมด ให้ลบข้อมูลในตารางโดยตรง หรือแก้ไขไฟล์ seed.js เพื่อเปิดคำสั่ง deleteMany');
+    console.log('ℹ️ พบข้อมูล Categories และ Ingredients คลบคลังแล้ว จะข้ามการสร้างเมนูเพื่อความปลอดภัย');
+    console.log('✅ การ Seed ข้อมูล Users สำเร็จแล้ว!');
     return;
   }
 
@@ -85,22 +109,6 @@ async function main() {
       });
     }
   }
-
-  // ==========================================
-  // 4. สร้าง Admin User (ใช้ upsert เพื่อไม่ให้พัง)
-  // ==========================================
-  console.log('👤 กำลังตรวจสอบ Admin User...');
-  await prisma.user.upsert({
-    where: { email: 'admin@kafung.com' },
-    update: {},
-    create: {
-      email: 'admin@kafung.com',
-      password: 'hashed_password_here', // ในระแบบจริงควรใช้ bcrypt
-      firstName: 'สมหมาย',
-      lastName: 'ใจดี',
-      role: 'ADMIN',
-    },
-  });
 
   console.log('✅ การตรวจสอบและ Seed ข้อมูลเสร็จสมบูรณ์!');
 }

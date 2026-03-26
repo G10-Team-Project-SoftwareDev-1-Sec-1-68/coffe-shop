@@ -62,8 +62,19 @@ const KAFUNG_MENU = [
       recipe: [{ ing: 'โซดา (Soda)', qty: 1 }] }
   ]}
 ];
+ 
+const STAFF_USERS = [
+  {
+    email: 'staff@kafung.com',
+    password: 'staff_password_123',
+    firstName: 'พนักงาน',
+    lastName: 'ขยันยิ่ง',
+    role: 'STAFF',
+  }
+];
 
 module.exports = {
   INGREDIENTS,
-  KAFUNG_MENU
+  KAFUNG_MENU,
+  STAFF_USERS
 };

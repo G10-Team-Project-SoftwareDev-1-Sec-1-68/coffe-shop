@@ -2,7 +2,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ShoppingCart, Search, LogOut, User, ClipboardList } from "lucide-react";
+import { ShoppingCart, Search, LogOut, User, ClipboardList, Menu, X } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 
 export default function Header() {
@@ -12,6 +12,7 @@ export default function Header() {
   // Use currentUser to avoid collision with 'User' icon from lucide-react
   const [currentUser, setCurrentUser] = useState(null); 
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     async function checkAuth() {
@@ -48,8 +49,16 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] bg-[#FDF8F1]/80 backdrop-blur-md border-b border-[#E5D5C6]/30">
-      <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 md:h-24 flex items-center justify-between">
         
+        {/* Mobile Menu Button */}
+        <button 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="md:hidden p-2 text-[#3D2B1F] hover:bg-[#B87C4C]/10 rounded-xl transition-colors"
+        >
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
         {/* 1. Logo Section (KAFUNG COFFEE BAR) */}
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-14 h-14 bg-[#B87C4C] rounded-full flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform duration-300">
@@ -162,6 +171,37 @@ export default function Header() {
           )}
         </div>
       </div>
+
+      {/* Mobile Menu Drawer */}
+      {isMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-[90] bg-[#FDF8F1] pt-20 animate-in slide-in-from-left duration-300">
+          <nav className="flex flex-col p-6 gap-2">
+            {[
+              {label: "HOME", href: "/"}, 
+              {label: "SERVICES", href: "/#services"}, 
+              {label: "MENU", href: "/menu"}, 
+              {label: "REVIEWS", href: "/#reviews"}
+            ].map(({label, href}) => (
+              <Link 
+                key={label} 
+                href={href} 
+                onClick={() => setIsMenuOpen(false)}
+                className="text-xl font-black italic text-[#6B5E55] p-4 rounded-2xl hover:bg-[#B87C4C]/10 hover:text-[#B87C4C] transition-all"
+              >
+                {label}
+              </Link>
+            ))}
+            
+            {/* Mobile Auth Actions - Only if not logged in */}
+            {!currentUser && (
+               <div className="grid grid-cols-2 gap-4 mt-6">
+                 <Link href="/login" className="bg-white border border-[#B87C4C] text-[#B87C4C] p-4 rounded-2xl font-black italic text-center text-sm" onClick={() => setIsMenuOpen(false)}>LOG IN</Link>
+                 <Link href="/register" className="bg-[#3D2B1F] text-white p-4 rounded-2xl font-black italic text-center text-sm" onClick={() => setIsMenuOpen(false)}>SIGN UP</Link>
+               </div>
+            )}
+          </nav>
+        </div>
+      )}
 
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@700&display=swap');

@@ -281,9 +281,9 @@ export default function POSOrderSystem() {
       </div>
 
       {/* Main Content Split */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden relative flex-col md:flex-row">
         
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50">
+        <div className={`flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/50 ${selectedOrder ? 'hidden md:block' : 'block'}`}>
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -358,8 +358,8 @@ export default function POSOrderSystem() {
           )}
         </div>
 
-        {/* ================= RIGHT: TICKET DETAILS ================= */}
-        <div className="w-[400px] xl:w-[450px] bg-white border-l border-gray-200 flex flex-col shrink-0 shadow-2xl z-20">
+        {/* ================= RIGHT: TICKET DETAILS (Full screen on mobile when selected) ================= */}
+        <div className={`${selectedOrder ? 'flex' : 'hidden'} md:flex w-full md:w-[400px] xl:w-[450px] bg-white border-l border-gray-200 flex-col shrink-0 shadow-2xl z-20`}>
           {!selectedOrder ? (
             <div className="flex flex-col items-center justify-center h-full text-center gap-4 p-8">
               <Receipt className="w-16 h-16 text-gray-200" />
@@ -368,9 +368,12 @@ export default function POSOrderSystem() {
           ) : (
             <>
               {/* Ticket Header */}
-              <div className="p-6 border-b border-gray-100 bg-amber-50/50">
+              <div className="p-4 md:p-6 border-b border-gray-100 bg-amber-50/50">
                 <div className="flex justify-between items-start mb-2">
-                  <h2 className="text-2xl font-black text-gray-900">{selectedOrder.orderNumber}</h2>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setSelectedOrder(null)} className="md:hidden p-2 -ml-2 text-gray-400"><XCircle size={20}/></button>
+                    <h2 className="text-xl md:text-2xl font-black text-gray-900">{selectedOrder.orderNumber}</h2>
+                  </div>
                   <span className="bg-amber-700 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
                     {selectedOrder.type}
                   </span>

@@ -27,8 +27,8 @@ export default function RootLayout({ children }) {
         {/* 🟢 2. วาง Header ไว้ตรงนี้ เพื่อให้ปรากฏในทุกหน้าของเว็บไซต์ */}
         <Header />
 
-        {/* 🟢 3. ใส่ Padding Top (pt-24) เพื่อไม่ให้เนื้อหาในแต่ละหน้าโดน Header บัง */}
-        <div className="pt-24">
+        {/* 🟢 3. ใส่ Padding Top เพื่อไม่ให้เนื้อหาในแต่ละหน้าโดน Header บัง (ปรับตามขนาด Header) */}
+        <div className="pt-20 md:pt-24">
           {children}
         </div>
       </body>

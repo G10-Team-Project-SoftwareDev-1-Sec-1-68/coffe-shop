@@ -57,7 +57,7 @@ export default function Toast({ message, type = "success", duration = 4000, onCl
     <div
       role="alert"
       aria-live="polite"
-      className={`fixed top-5 right-5 z-[100] flex items-start gap-3 rounded-xl border px-4 py-3.5 shadow-lg backdrop-blur-sm
+      className={`fixed top-5 left-5 right-5 md:left-auto md:right-5 z-[100] flex items-start gap-3 rounded-xl border px-4 py-3.5 shadow-lg backdrop-blur-sm
         transition-all duration-300 ease-out max-w-sm w-full
         ${BG[type]}
         ${visible ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0"}`}
