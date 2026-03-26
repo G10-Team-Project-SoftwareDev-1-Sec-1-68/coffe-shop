@@ -143,6 +143,32 @@ export async function PATCH(request, context) {
           data: { status: "COMPLETED" },
         });
 
+        // ==========================================
+        // C. Loyalty Points Awarding (10 THB = 1 Point)
+        // ==========================================
+        if (existing.customerId) {
+          const totalAmount = parseFloat(existing.totalAmount || 0);
+          const pointsToAward = Math.floor(totalAmount / 10);
+          
+          if (pointsToAward > 0) {
+            await tx.user.update({
+              where: { id: existing.customerId },
+              data: {
+                points: { increment: pointsToAward }
+              }
+            });
+
+            await tx.pointLog.create({
+              data: {
+                userId: existing.customerId,
+                amount: pointsToAward,
+                reason: `ได้รับแต้มจากการสั่งซื้อออเดอร์ ${existing.orderNumber}`,
+                orderId: existing.id
+              }
+            });
+          }
+        }
+
         return tx.order.findUnique({
           where: { id: orderId },
           include: includeFull,
