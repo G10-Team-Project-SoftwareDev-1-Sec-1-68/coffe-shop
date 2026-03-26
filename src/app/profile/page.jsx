@@ -7,24 +7,44 @@ import MemberCard from "./MemberCard";
 import RewardItems from "./RewardItems";
 
 export default function ProfilePage() {
-  // 🟢 ข้อมูลที่ดึงมาจากฐานข้อมูล (Database Mockup)
-  const DB_USER = {
-    name: "คุณเนม",
-    phone: "081-234-5678",
-    points: 2450,
-    expiryDate: "31-12-2026"
-  };
+  const [user, setUser] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  async function fetchUser() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      setUser(data.user ?? null);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  React.useEffect(() => {
+    fetchUser();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#FDF5ED] pb-40 relative">
       <Header />
-      
+
       <main className="max-w-[1100px] mx-auto pt-24 px-8">
-        
-        {/* ส่ง Object user ทั้งก้อนไปที่ MemberCard */}
-        <MemberCard user={DB_USER} />
-        
-        <RewardItems />
+
+        {loading ? (
+          /* Loading skeleton for MemberCard */
+          <div className="bg-gradient-to-r from-[#FFD700] via-[#FFA500] to-[#FF8C00] p-8 rounded-[2.5rem] mb-10 animate-pulse h-44" />
+        ) : user ? (
+          <MemberCard user={user} />
+        ) : (
+          <div className="bg-white rounded-[2.5rem] p-8 mb-10 shadow-lg text-center text-coffee-dark font-bold text-lg italic">
+            กรุณาเข้าสู่ระบบเพื่อดูบัตรสมาชิก
+          </div>
+        )}
+
+        <RewardItems userPoints={user?.points ?? 0} onRedeemSuccess={fetchUser} />
       </main>
 
       {/* Floating Bottom Nav */}

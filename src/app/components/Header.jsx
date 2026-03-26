@@ -2,31 +2,43 @@
 import * as React from "react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ShoppingCart, Search, LogOut, User } from "lucide-react";
+import { ShoppingCart, Search, LogOut, User, ClipboardList } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 
 export default function Header() {
-  // 🟢 ดึงจำนวนของในตะกร้ามาโชว์ที่ไอคอน
   const { cartItems } = useCartStore();
   const basketCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  const [user, setUser] = useState(null); // null = ยังโหลด, false = ไม่ได้ login
+  const [user, setUser] = useState(null); 
+  const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setUser(data?.user ?? false))
-      .catch(() => setUser(false));
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user || false);
+        } else {
+          setUser(false);
+        }
+      } catch (err) {
+        setUser(false);
+      }
+    }
+    checkAuth();
+
+    const handleClickOutside = () => setShowDropdown(false);
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/login";
-  }
+  };
 
-  const displayName = user
-    ? user.firstName + (user.lastName ? ` ${user.lastName}` : "")
-    : null;
+  const displayName = user ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}` : "";
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] bg-[#FDF8F1]/80 backdrop-blur-md border-b border-[#E5D5C6]/30">
@@ -84,22 +96,48 @@ export default function Header() {
             // Loading skeleton
             <div className="h-10 w-28 animate-pulse rounded-full bg-[#E5D5C6]" />
           ) : user ? (
-            // Logged-in: แสดงชื่อ + logout
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 rounded-full border border-[#E5D5C6] bg-white px-4 py-2 shadow-sm">
-                <User className="h-4 w-4 text-[#B87C4C]" />
-                <span className="text-sm font-bold text-[#3D2B1F] max-w-[120px] truncate uppercase tracking-wide">
-                  {displayName}
-                </span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 text-red-600 px-4 py-2 text-sm font-bold transition hover:bg-red-100 uppercase tracking-widest"
-                aria-label="ออกจากระบบ"
+            // Logged-in: Dropdown Menu
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <button 
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="flex items-center gap-2 rounded-full border border-[#E5D5C6] bg-white px-4 py-2 shadow-sm hover:border-[#B87C4C] transition-all active:scale-95 cursor-pointer"
               >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <div className="w-6 h-6 rounded-full bg-[#B87C4C] flex items-center justify-center text-white">
+                  <User size={14} strokeWidth={3} />
+                </div>
+                <span className="text-sm font-bold text-[#3D2B1F] max-w-[100px] truncate uppercase tracking-wide">
+                  {user.firstName}
+                </span>
               </button>
+
+              {/* Dropdown Content */}
+              {showDropdown && (
+                <div className="absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-2xl border border-[#E5D5C6]/50 py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <p className="px-4 py-2 text-[10px] font-black text-[#B87C4C] uppercase tracking-widest border-b border-[#E5D5C6]/30 mb-1">
+                    ยินดีต้อนรับ, {user.firstName}
+                  </p>
+                  
+                  <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#3D2B1F] hover:bg-[#FDF8F1] hover:text-[#B87C4C] transition-colors underline-none">
+                    <User size={18} />
+                    <span>โปรไฟล์สมาชิก</span>
+                  </Link>
+                  
+                  <Link href="/orders" className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#3D2B1F] hover:bg-[#FDF8F1] hover:text-[#B87C4C] transition-colors underline-none">
+                    <ClipboardList size={18} />
+                    <span>ประวัติการสั่งซื้อ</span>
+                  </Link>
+
+                  <div className="border-t border-[#E5D5C6]/30 mt-1">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                    >
+                      <LogOut size={18} />
+                      <span>ออกจากระบบ</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             // Not logged in: แสดงปุ่ม login + register ดีไซน์ใหม่
