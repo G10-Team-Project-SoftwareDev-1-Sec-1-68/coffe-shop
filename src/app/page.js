@@ -177,7 +177,7 @@ export default function LandingPage() {
               {REVIEWS.map((r) => (
                 <div key={r.name} className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-6 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <img src={r.avatar} alt={r.name} className="h-12 w-12 rounded-full object-cover border-2 border-border" />
+                    <Image src={r.avatar} alt={r.name} width={48} height={48} className="h-12 w-12 rounded-full object-cover border-2 border-border" />
                     <div>
                       <p className="font-bold text-foreground text-sm">{r.name}</p>
                       <p className="text-xs text-muted-foreground">สั่ง: {r.item}</p>
