@@ -1,0 +1,47 @@
+name: Deploy Next.js to Cloud Run
+
+# on:
+#   push:
+#     branches: [ "main" ]
+
+#env:
+  REGION: asia-southeast1 # เลือก Region ที่ใกล้ที่สุด (สิงคโปร์)
+  SERVICE_NAME: coffee-shop-app # ชื่อ Service ใน Cloud Run
+  GAR_LOCATION: asia-southeast1-docker.pkg.dev/YOUR_PROJECT_ID/YOUR_REPO_NAME/coffee-shop-image # แก้ไขตรงนี้ให้ตรงกับ Artifact Registry
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker to use Artifact Registry
+        run: |-
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and Push Docker Image
+        run: |-
+          docker build -t ${{ env.GAR_LOCATION }}:${{ github.sha }} .
+          docker push ${{ env.GAR_LOCATION }}:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.GAR_LOCATION }}:${{ github.sha }}
+          env_vars: |
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          flags: '--allow-unauthenticated' # เปิดให้เข้าถึงแบบสาธารณะ
