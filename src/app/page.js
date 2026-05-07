@@ -188,7 +188,7 @@ export default function LandingPage() {
                       ))}
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">"{r.text}"</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">&quot;{r.text}&quot;</p>
                 </div>
               ))}
             </div>
