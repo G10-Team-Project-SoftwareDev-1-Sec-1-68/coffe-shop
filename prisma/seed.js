@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client')
 const { PrismaPg } = require('@prisma/adapter-pg')
 const { Pool } = require('pg')
+const bcrypt = require('bcryptjs')
 const { INGREDIENTS, KAFUNG_MENU, STAFF_USERS } = require('./mockData')
 require('dotenv').config()
 
@@ -15,12 +16,13 @@ async function main() {
   // 1. ตรวจสอบและ Seed ข้อมูล Users (ทำเสมอด้วย Upsert)
   // ==========================================
   console.log('👤 กำลังตรวจสอบ Admin User...');
+  const adminPassword = await bcrypt.hash('admin123456', 10);
   await prisma.user.upsert({
     where: { email: 'admin@kafung.com' },
     update: {},
     create: {
       email: 'admin@kafung.com',
-      password: 'hashed_password_here', // ในระแบบจริงควรใช้ bcrypt
+      password: adminPassword,
       firstName: 'สมหมาย',
       lastName: 'ใจดี',
       role: 'ADMIN',
@@ -29,10 +31,14 @@ async function main() {
 
   console.log('👤 กำลังตรวจสอบ Staff Users...');
   for (const staff of STAFF_USERS) {
+    const hashedPassword = await bcrypt.hash(staff.password, 10);
     await prisma.user.upsert({
       where: { email: staff.email },
       update: {},
-      create: staff,
+      create: {
+        ...staff,
+        password: hashedPassword,
+      },
     });
   }
 

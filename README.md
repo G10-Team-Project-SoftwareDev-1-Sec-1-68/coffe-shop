@@ -1,4 +1,7 @@
 # ☕ KAFUNG Coffee Bar
+![alt text](image.png)
+![alt text](image-1.png)
+![alt text](image-2.png)
  
 > [!IMPORTANT]
 > **🚀 เจอปัญหารันโปรเจกต์ไม่ได้?** อ่าน [คู่มือแก้ไขปัญหาเบื้องต้น (Troubleshooting Guide)](./TROUBLESHOOTING.md)
