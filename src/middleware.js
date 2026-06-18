@@ -17,6 +17,7 @@ const ROLE_HOME = {
 const PATH_ROLES = {
   "/orders": ["CUSTOMER"],
   "/cart": ["CUSTOMER"],
+  "/profile": ["CUSTOMER", "STAFF", "ADMIN"],
   "/pos": ["STAFF"],
   "/admin": ["ADMIN"],
   "/menu": ["CUSTOMER", "STAFF", "ADMIN"],
@@ -103,5 +104,7 @@ export const config = {
     "/menu",
     "/cart/:path*",
     "/cart",
+    "/profile/:path*",
+    "/profile",
   ],
 };

@@ -23,7 +23,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function fetchSummary() {
       try {
-        const response = await fetch('/api/dashboard/summary');
+        const response = await fetch('/api/dashboard/summary', { credentials: 'include' });
         
         if (!response.ok) {
           if (response.status === 401) {

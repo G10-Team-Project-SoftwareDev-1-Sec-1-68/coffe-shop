@@ -168,10 +168,6 @@ export default function CartPage() {
           </>
         )}
       </main>
-
-      <style jsx global>{`
-        * { font-family: 'Playpen Sans', cursive !important; }
-      `}</style>
     </div>
   );
 }

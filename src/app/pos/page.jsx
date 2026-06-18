@@ -74,10 +74,9 @@ export default function POSOrderSystem() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const PROMPTPAY_ID = "0628295556";
-  const TEST_MOCK_1_BAHT = true; // เปิดโหมดทดสอบ จ่าย 1 บาท
 
   // ยอดที่ใช้ใน QR และส่ง API ต้องตรงกันเสมอ
-  const paymentAmount = TEST_MOCK_1_BAHT ? 1 : parseFloat(selectedOrder?.totalAmount ?? 0);
+  const paymentAmount = parseFloat(selectedOrder?.totalAmount ?? 0);
 
   // Fetch orders based on active tab
   const fetchOrders = async (silent = false) => {
@@ -272,7 +271,6 @@ export default function POSOrderSystem() {
                     <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-blue-500/50 shadow-[0_0_10px_2px_rgba(59,130,246,0.3)] animate-pulse" />
                   </div>
                   <p className="text-sm font-bold text-blue-800 bg-blue-50 px-3 py-1 rounded-full mb-2">PromptPay: {PROMPTPAY_ID}</p>
-                  {TEST_MOCK_1_BAHT && <p className="text-xs text-red-500 font-bold bg-red-50 px-2 py-1 rounded">⚠️ โหมดทดสอบ: แสกนจ่ายจริง 1 บาท</p>}
                 </div>
               ) : (
                 <div className="flex flex-col items-center animate-in fade-in slide-in-from-bottom-2 py-8">

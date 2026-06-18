@@ -9,7 +9,7 @@ export const useCartStore = create((set, get) => ({
     set((state) => {
       // สร้าง Unique ID เพื่อแยกรายการที่ชื่อเหมือนกันแต่ Option ต่างกัน
       const optionIds = options.optionIds || [];
-      const uniqueId = `${item.id}-${options.size}-${optionIds.sort().join(',')}`;
+      const uniqueId = `${item.variant?.id ?? item.id}-${options.size}-${optionIds.sort().join(',')}`;
       const existingItemIndex = state.cartItems.findIndex(cartItem => cartItem.uniqueId === uniqueId);
       
       const itemPrice = options.totalPricePerUnit;
